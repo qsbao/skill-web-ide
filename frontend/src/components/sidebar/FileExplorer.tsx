@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useFileStore } from '../../stores/fileStore';
 import { useSkillStore } from '../../stores/skillStore';
 import { useEditorStore } from '../../stores/editorStore';
-import { useSkills } from '../../hooks/useSkills';
 import { api } from '../../api/client';
 import type { SkillFile } from '@skill-ide/shared';
 
@@ -61,8 +60,7 @@ function FileNode({
 
 export function FileExplorer() {
   const { tree, loading } = useFileStore();
-  const { skills, activeSkillId } = useSkillStore();
-  const { selectSkill } = useSkills();
+  const { activeSkillId } = useSkillStore();
   const [ctx, setCtx] = useState<ContextMenuState | null>(null);
   const [creating, setCreating] = useState<{ parentPath: string; isDir: boolean } | null>(null);
   const [newName, setNewName] = useState('');
@@ -111,35 +109,26 @@ export function FileExplorer() {
     useFileStore.getState().setTree(tree);
   };
 
+  if (!activeSkillId) {
+    return (
+      <div className="h-full bg-gray-800 flex items-center justify-center">
+        <span className="text-xs text-gray-500">No skill selected</span>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-gray-800 overflow-y-auto flex flex-col">
-      <div className="p-2 border-b border-gray-700">
-        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Skills</div>
-        {skills.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => selectSkill(s.id)}
-            className={`text-sm px-2 py-1 rounded cursor-pointer truncate ${
-              s.id === activeSkillId ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            {s.name}
-          </div>
-        ))}
+      <div className="flex-1 overflow-y-auto p-1" onContextMenu={handleRootContext}>
+        <div className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1">Files</div>
+        {loading ? (
+          <div className="text-xs text-gray-500 px-2">Loading...</div>
+        ) : (
+          tree.map((node) => (
+            <FileNode key={node.path} node={node} skillId={activeSkillId} onContext={handleContext} />
+          ))
+        )}
       </div>
-
-      {activeSkillId && (
-        <div className="flex-1 overflow-y-auto p-1" onContextMenu={handleRootContext}>
-          <div className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1">Files</div>
-          {loading ? (
-            <div className="text-xs text-gray-500 px-2">Loading...</div>
-          ) : (
-            tree.map((node) => (
-              <FileNode key={node.path} node={node} skillId={activeSkillId} onContext={handleContext} />
-            ))
-          )}
-        </div>
-      )}
 
       {/* Create input */}
       {creating && (

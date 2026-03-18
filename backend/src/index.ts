@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import multipart from '@fastify/multipart';
 import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { skillRoutes } from './routes/skills.js';
@@ -7,6 +8,7 @@ import { fileRoutes } from './routes/files.js';
 import { testRoutes } from './routes/tests.js';
 import { testCaseRoutes } from './routes/test-cases.js';
 import { wsHandler } from './ws/handler.js';
+import { initRepo } from './services/skill.service.js';
 import fs from 'node:fs/promises';
 
 const app = Fastify({ logger: true });
@@ -15,7 +17,11 @@ async function start() {
   // Ensure skills-workspace exists
   await fs.mkdir(config.skillsDir, { recursive: true });
 
+  // Init git repo in skills-workspace
+  await initRepo();
+
   await app.register(cors, { origin: config.corsOrigin });
+  await app.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
   await app.register(websocket);
 
   // Routes

@@ -10,9 +10,13 @@
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
     "@skill-ide/shared": "workspace:*",
+    "@tailwindcss/typography": "^0.5.19",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.0",
+    "react-router-dom": "^7.13.1",
+    "remark-gfm": "^4.0.1",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

@@ -16,3 +16,14 @@ export interface SkillFile {
   type: 'file' | 'dir';
   children?: SkillFile[];
 }
+
+export interface SkillListQuery {
+  search?: string;
+  tags?: string[];
+  author?: string;
+}
+
+export interface SkillReadme {
+  frontmatter: Record<string, any>;
+  body: string;
+}
