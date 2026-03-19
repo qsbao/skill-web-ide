@@ -1,5 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
+import { v4 as uuid } from 'uuid';
 import * as testRunner from '../services/test-runner.service.js';
+import * as runService from '../services/run.service.js';
 import type { TestType, WsMessage } from '@skill-ide/shared';
 
 export const wsHandler: FastifyPluginAsync = async (app) => {
@@ -32,6 +34,35 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
 
           // Send initial run info
           socket.send(JSON.stringify({ type: 'test:started', payload: run }));
+        }
+
+        if (msg.action === 'run:run') {
+          const { skillId, prompt } = msg.payload as { skillId: string; prompt: string };
+          const runId = uuid();
+
+          runService.runSkill(
+            skillId,
+            prompt,
+            (stream, data) => {
+              const out: WsMessage = {
+                type: 'run:output',
+                payload: { runId, stream, data },
+              };
+              socket.send(JSON.stringify(out));
+            },
+            (status) => {
+              const statusMsg: WsMessage = {
+                type: 'run:status',
+                payload: { runId, status },
+              };
+              socket.send(JSON.stringify(statusMsg));
+            },
+            runId,
+          ).then((run) => {
+            socket.send(JSON.stringify({ type: 'run:started', payload: run }));
+          }).catch((err) => {
+            socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
+          });
         }
       } catch {
         socket.send(JSON.stringify({ type: 'error', payload: 'Invalid message' }));

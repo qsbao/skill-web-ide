@@ -95,4 +95,15 @@ export const api = {
   importTestCases: (skillId: string, cases: any[]) =>
     request<any[]>(`${skillPath(skillId)}/tests/cases/import`, { method: 'POST', body: JSON.stringify({ cases }) }),
   exportTestCases: (skillId: string) => request<any[]>(`${skillPath(skillId)}/tests/cases/export`),
+
+  // Runs
+  getSkillRuns: (skillId: string) => request<any[]>(`${skillPath(skillId)}/runs`),
+  getRunFiles: (skillId: string, runId: string) =>
+    request<any[]>(`${skillPath(skillId)}/runs/${runId}/files`),
+  readRunFile: (skillId: string, runId: string, path: string) =>
+    request<{ path: string; content: string }>(`${skillPath(skillId)}/runs/${runId}/files/${path}`),
+  getRunDownloadUrl: (skillId: string, runId: string, path: string) =>
+    `${BASE}${skillPath(skillId)}/runs/${runId}/download/${path}`,
+  cancelRun: (skillId: string, runId: string) =>
+    request<{ ok: boolean }>(`${skillPath(skillId)}/runs/${runId}/cancel`, { method: 'POST' }),
 };

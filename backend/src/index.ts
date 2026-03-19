@@ -7,6 +7,7 @@ import { skillRoutes } from './routes/skills.js';
 import { fileRoutes } from './routes/files.js';
 import { testRoutes } from './routes/tests.js';
 import { testCaseRoutes } from './routes/test-cases.js';
+import { runRoutes } from './routes/runs.js';
 import { wsHandler } from './ws/handler.js';
 import { initRepo } from './services/skill.service.js';
 import fs from 'node:fs/promises';
@@ -14,8 +15,9 @@ import fs from 'node:fs/promises';
 const app = Fastify({ logger: true });
 
 async function start() {
-  // Ensure skills-workspace exists
+  // Ensure directories exist
   await fs.mkdir(config.skillsDir, { recursive: true });
+  await fs.mkdir(config.runsDir, { recursive: true });
 
   // Init git repo in skills-workspace
   await initRepo();
@@ -29,6 +31,7 @@ async function start() {
   await app.register(fileRoutes, { prefix: '/api/skills' });
   await app.register(testRoutes, { prefix: '/api/skills' });
   await app.register(testCaseRoutes, { prefix: '/api/skills' });
+  await app.register(runRoutes, { prefix: '/api/skills' });
   await app.register(wsHandler);
 
   await app.listen({ port: config.port, host: config.host });

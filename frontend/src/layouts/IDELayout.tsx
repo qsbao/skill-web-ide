@@ -6,9 +6,10 @@ import { SkillEditor } from '../components/editor/SkillEditor';
 import { OutputPanel } from '../components/panel/OutputPanel';
 import { TestRunner } from '../components/panel/TestRunner';
 import { TestSuiteManager } from '../components/panel/TestSuiteManager';
+import { SkillRunner } from '../components/panel/SkillRunner';
 import { useWebSocket } from '../hooks/useWebSocket';
 
-type BottomTab = 'output' | 'tests' | 'test-suite';
+type BottomTab = 'output' | 'tests' | 'test-suite' | 'run';
 
 export function IDELayout() {
   useWebSocket();
@@ -18,6 +19,7 @@ export function IDELayout() {
     { id: 'output', label: 'Output' },
     { id: 'tests', label: 'Test Runner' },
     { id: 'test-suite', label: 'Test Suite' },
+    { id: 'run', label: 'Run' },
   ];
 
   return (
@@ -57,6 +59,7 @@ export function IDELayout() {
               {bottomTab === 'output' && <OutputPanel />}
               {bottomTab === 'tests' && <TestRunner />}
               {bottomTab === 'test-suite' && <TestSuiteManager />}
+              {bottomTab === 'run' && <SkillRunner />}
             </div>
           </div>
         </Panel>

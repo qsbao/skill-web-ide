@@ -2,7 +2,10 @@ export type WsMessageType =
   | 'test:output'
   | 'test:status'
   | 'test:result'
-  | 'file:changed';
+  | 'file:changed'
+  | 'run:output'
+  | 'run:status'
+  | 'run:started';
 
 export interface WsMessage {
   type: WsMessageType;
@@ -39,5 +42,22 @@ export interface FileChangedMessage extends WsMessage {
   payload: {
     skillId: string;
     path: string;
+  };
+}
+
+export interface RunOutputMessage extends WsMessage {
+  type: 'run:output';
+  payload: {
+    runId: string;
+    stream: 'stdout' | 'stderr';
+    data: string;
+  };
+}
+
+export interface RunStatusMessage extends WsMessage {
+  type: 'run:status';
+  payload: {
+    runId: string;
+    status: string;
   };
 }
