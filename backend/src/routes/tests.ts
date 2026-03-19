@@ -3,12 +3,13 @@ import * as testRunner from '../services/test-runner.service.js';
 import type { TestType } from '@skill-ide/shared';
 
 export const testRoutes: FastifyPluginAsync = async (app) => {
-  // POST /api/skills/:id/tests/run
-  app.post<{ Params: { id: string }; Body: { type: TestType } }>(
-    '/:id/tests/run',
+  // POST /api/skills/:author/:name/tests/run
+  app.post<{ Params: { author: string; name: string }; Body: { type: TestType } }>(
+    '/:author/:name/tests/run',
     async (req) => {
+      const slug = `${req.params.author}/${req.params.name}`;
       const run = testRunner.runTest(
-        req.params.id,
+        slug,
         req.body.type,
         () => {}, // streaming handled via WS
         () => {},
@@ -17,8 +18,12 @@ export const testRoutes: FastifyPluginAsync = async (app) => {
     },
   );
 
-  // GET /api/skills/:id/tests/runs
-  app.get<{ Params: { id: string } }>('/:id/tests/runs', async (req) => {
-    return testRunner.getTestRuns(req.params.id);
-  });
+  // GET /api/skills/:author/:name/tests/runs
+  app.get<{ Params: { author: string; name: string } }>(
+    '/:author/:name/tests/runs',
+    async (req) => {
+      const slug = `${req.params.author}/${req.params.name}`;
+      return testRunner.getTestRuns(slug);
+    },
+  );
 };

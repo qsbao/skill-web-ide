@@ -30,15 +30,35 @@ export function useSkills() {
     async (name: string) => {
       const skill = await api.createSkill({ name });
       await loadSkills();
-      await selectSkill(skill.id);
       return skill;
     },
-    [loadSkills, selectSkill],
+    [loadSkills],
+  );
+
+  const deleteSkill = useCallback(
+    async (id: string) => {
+      await api.deleteSkill(id);
+      if (activeSkillId === id) {
+        setActiveSkillId(null);
+        setTree([]);
+      }
+      await loadSkills();
+    },
+    [activeSkillId, loadSkills, setActiveSkillId, setTree],
+  );
+
+  const copySkill = useCallback(
+    async (id: string) => {
+      const copied = await api.copySkill(id);
+      await loadSkills();
+      return copied;
+    },
+    [loadSkills],
   );
 
   useEffect(() => {
     loadSkills();
   }, [loadSkills]);
 
-  return { skills, activeSkillId, selectSkill, createSkill, loadSkills };
+  return { skills, activeSkillId, selectSkill, createSkill, deleteSkill, copySkill, loadSkills };
 }

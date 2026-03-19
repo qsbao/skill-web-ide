@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/qsbao/github/qsbao/skill-platform -type f -name .*)",
+      "Bash(find /Users/qsbao/github/qsbao/skill-web-ide -type f -name *.md -o -name *.json -o -name *.txt -o -name *.yml -o -name *.yaml)",
+      "Bash(git config:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
