@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UploadCloud } from 'lucide-react';
 import { api } from '../../api/client';
 
 interface UploadSkillModalProps {
@@ -34,23 +35,38 @@ export function UploadSkillModal({ onClose, onUploaded }: UploadSkillModalProps)
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-lg font-semibold text-white mb-4">Upload Skill</h2>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div
+        className="w-full max-w-md p-6 rounded-xl animate-fade-in"
+        style={{
+          background: 'rgb(var(--surface-overlay))',
+          border: '1px solid rgb(var(--border-default) / 0.6)',
+          boxShadow: '0 24px 64px -12px rgba(0, 0, 0, 0.5), 0 0 1px rgba(129, 140, 248, 0.1)',
+        }}
+      >
+        <h2 className="text-lg font-semibold text-slate-200 mb-4">Upload Skill</h2>
 
         <div className="mb-4">
-          <label className="block text-sm text-gray-400 mb-2">
+          <label className="block text-sm text-slate-400 mb-2">
             Skill archive (.zip or .tar.gz)
           </label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => fileRef.current?.click()}
-              className="text-sm bg-gray-700 text-gray-300 px-4 py-2 rounded hover:bg-gray-600"
-            >
-              Choose File
-            </button>
-            <span className="text-sm text-gray-400 self-center truncate">
-              {fileName || 'No file selected'}
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="flex flex-col items-center justify-center gap-2 py-8 rounded-lg border-2 border-dashed cursor-pointer transition-colors"
+            style={{
+              borderColor: fileName ? 'var(--accent-muted)' : 'rgb(var(--border-default) / 0.5)',
+              background: fileName ? 'var(--accent-subtle)' : 'rgb(var(--surface-inset))',
+            }}
+            onMouseEnter={(e) => {
+              if (!fileName) e.currentTarget.style.borderColor = 'rgb(var(--border-default))';
+            }}
+            onMouseLeave={(e) => {
+              if (!fileName) e.currentTarget.style.borderColor = 'rgb(var(--border-default) / 0.5)';
+            }}
+          >
+            <UploadCloud className="w-8 h-8 text-slate-500" style={fileName ? { color: 'var(--accent)' } : {}} />
+            <span className="text-sm text-slate-400">
+              {fileName || 'Click to choose a file'}
             </span>
           </div>
           <input
@@ -63,20 +79,20 @@ export function UploadSkillModal({ onClose, onUploaded }: UploadSkillModalProps)
         </div>
 
         {error && (
-          <div className="text-sm text-red-400 mb-4">{error}</div>
+          <div className="text-sm text-red-400 mb-4 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">{error}</div>
         )}
 
         <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="text-sm text-gray-400 px-4 py-2 hover:text-white"
+            className="btn-ghost"
           >
             Cancel
           </button>
           <button
             onClick={handleUpload}
             disabled={!fileName || uploading}
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary"
           >
             {uploading ? 'Uploading...' : 'Upload'}
           </button>

@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSkillStore } from '../stores/skillStore';
 import { useTestStore } from '../stores/testStore';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { ArrowLeft, AlertTriangle, Play, Timer } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Toolbar() {
   const navigate = useNavigate();
@@ -17,43 +19,51 @@ export function Toolbar() {
   };
 
   return (
-    <div className="h-10 bg-gray-800 border-b border-gray-700 flex items-center px-3 gap-2 shrink-0">
+    <div className="h-12 bg-surface-raised border-b border-border-subtle flex items-center px-4 gap-3 shrink-0">
       <button
         onClick={() => navigate('/dashboard')}
-        className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded hover:bg-gray-600"
+        className="btn-ghost !px-2 !py-1 !text-xs !gap-1"
       >
-        &larr; Dashboard
+        <ArrowLeft className="w-3.5 h-3.5" />
+        Dashboard
       </button>
-      <div className="w-px h-5 bg-gray-600" />
-      <span className="text-sm font-semibold text-blue-400">Skill IDE</span>
+
+      <div className="w-px h-5 bg-border-subtle" />
+
+      <span className="text-sm font-semibold text-accent tracking-tight">Skill IDE</span>
 
       {activeSkillId && (
-        <span className="text-xs text-gray-400 truncate max-w-xs">{activeSkillId}</span>
+        <span className="badge font-mono text-[11px]">{activeSkillId}</span>
       )}
 
       <div className="flex-1" />
 
+      <ThemeToggle />
+
       {activeSkillId && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => handleRunTest('lint')}
             disabled={running}
-            className="text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 disabled:opacity-50"
+            className="btn-secondary !px-2.5 !py-1 !text-xs !gap-1"
           >
+            <AlertTriangle className="w-3.5 h-3.5" />
             Lint
           </button>
           <button
             onClick={() => handleRunTest('unit')}
             disabled={running}
-            className="text-xs bg-green-700 px-2 py-1 rounded hover:bg-green-600 disabled:opacity-50"
+            className="btn-secondary !px-2.5 !py-1 !text-xs !gap-1 !text-emerald-400 !border-emerald-500/20 hover:!border-emerald-500/40 hover:!text-emerald-300"
           >
+            <Play className="w-3.5 h-3.5" />
             Test
           </button>
           <button
             onClick={() => handleRunTest('benchmark')}
             disabled={running}
-            className="text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600 disabled:opacity-50"
+            className="btn-secondary !px-2.5 !py-1 !text-xs !gap-1"
           >
+            <Timer className="w-3.5 h-3.5" />
             Bench
           </button>
         </div>

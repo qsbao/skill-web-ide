@@ -11,6 +11,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@skill-ide/shared": "workspace:*",
     "@tailwindcss/typography": "^0.5.19",
+    "lucide-react": "^1.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

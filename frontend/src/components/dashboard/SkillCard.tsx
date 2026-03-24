@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Play, Code2, Copy, Trash2 } from 'lucide-react';
 import type { SkillMeta } from '@skill-ide/shared';
 
 interface SkillCardProps {
@@ -19,17 +20,19 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
   return (
     <div
       onClick={handleClick}
-      className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-gray-750 transition-colors group"
+      className="card p-4 cursor-pointer group"
     >
       <div className="flex items-start justify-between mb-2">
-        <h3 className="text-sm font-semibold text-white truncate">{skill.name}</h3>
-        <span className="text-xs text-gray-500 shrink-0 ml-2">v{skill.version}</span>
+        <h3 className="text-sm font-semibold text-slate-200 truncate">{skill.name}</h3>
+        <span className="badge shrink-0 ml-2 text-[10px] py-0 px-1.5" style={{ color: 'var(--accent)', borderColor: 'rgba(99, 102, 241, 0.25)', background: 'var(--accent-subtle)' }}>
+          v{skill.version}
+        </span>
       </div>
 
-      <div className="text-xs text-blue-400 mb-2">@{skill.author}</div>
+      <div className="text-xs mb-2" style={{ color: 'var(--accent)' }}>@{skill.author}</div>
 
       {skill.description && (
-        <p className="text-xs text-gray-400 mb-3 line-clamp-2">{skill.description}</p>
+        <p className="text-xs text-slate-400 mb-3 line-clamp-2">{skill.description}</p>
       )}
 
       {skill.tags.length > 0 && (
@@ -37,7 +40,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
           {skill.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded"
+              className="badge"
             >
               {tag}
             </span>
@@ -45,8 +48,8 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-gray-700">
-        <span className="text-xs text-gray-500">
+      <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgb(var(--border-subtle) / 0.5)' }}>
+        <span className="text-xs text-slate-500">
           {new Date(skill.updatedAt).toLocaleDateString()}
         </span>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -55,36 +58,45 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
               e.stopPropagation();
               navigate(`/playground/${idWithoutAt}`);
             }}
-            className="text-xs bg-gray-700 text-green-400 px-2 py-1 rounded hover:bg-gray-600"
+            title="Try in Playground"
+            className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-400/10 transition-colors"
           >
-            Try
+            <Play className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/ide/${idWithoutAt}`);
             }}
-            className="text-xs bg-gray-700 text-blue-400 px-2 py-1 rounded hover:bg-gray-600"
+            title="Edit in IDE"
+            className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--accent)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-subtle)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            Edit
+            <Code2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onCopy(skill.id);
             }}
-            className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded hover:bg-gray-600"
+            title="Duplicate Skill"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
+            style={{}}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgb(var(--surface-overlay) / 0.6)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
-            Copy
+            <Copy className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete(skill.id);
             }}
-            className="text-xs bg-gray-700 text-red-400 px-2 py-1 rounded hover:bg-gray-600"
+            title="Delete Skill"
+            className="p-1.5 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors"
           >
-            Delete
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { Play, Code2, ArrowLeft, Calendar, Clock } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 import type { SkillMeta } from '@skill-ide/shared';
 
 interface SkillHeaderProps {
@@ -11,47 +13,56 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
   const idWithoutAt = skill.id.startsWith('@') ? skill.id.slice(1) : skill.id;
 
   return (
-    <div className="border-b border-gray-700 pb-6">
-      <div className="flex items-start justify-between mb-3">
+    <div
+      className="rounded-xl border border-border/40 pb-6 px-6 pt-6"
+      style={{
+        background: 'linear-gradient(180deg, rgb(var(--surface-overlay)) 0%, transparent 100%)',
+      }}
+    >
+      <div className="flex items-start justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">{skill.name}</h1>
-          <div className="flex items-center gap-3 mt-1">
-            <span className="text-sm text-blue-400">@{skill.author}</span>
-            <span className="text-sm text-gray-500">v{skill.version}</span>
+          <h1 className="text-2xl font-bold text-slate-100">{skill.name}</h1>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="text-sm font-medium text-accent">@{skill.author}</span>
+            <span className="badge font-mono">v{skill.version}</span>
           </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => navigate(`/playground/${idWithoutAt}`)}
-            className="text-sm bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg text-white transition-all duration-150 bg-emerald-600 hover:bg-emerald-500 shadow-sm hover:shadow-md"
           >
-            Try in Playground
+            <Play className="w-3.5 h-3.5" />
+            Playground
           </button>
           <button
             onClick={() => navigate(`/ide/${idWithoutAt}`)}
-            className="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+            className="btn-primary"
           >
+            <Code2 className="w-3.5 h-3.5" />
             Open in IDE
           </button>
           <button
             onClick={() => navigate('/dashboard')}
-            className="text-sm bg-gray-700 text-gray-300 px-4 py-2 rounded hover:bg-gray-600"
+            className="btn-ghost"
           >
+            <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </button>
+          <ThemeToggle />
         </div>
       </div>
 
       {skill.description && (
-        <p className="text-gray-400 mb-3">{skill.description}</p>
+        <p className="text-slate-400 mb-4 leading-relaxed">{skill.description}</p>
       )}
 
       {skill.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {skill.tags.map((tag) => (
             <span
               key={tag}
-              className="text-xs bg-gray-700 text-gray-300 px-2.5 py-1 rounded-full"
+              className="badge"
             >
               {tag}
             </span>
@@ -63,9 +74,9 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
       {Object.keys(frontmatter).length > 0 && (
         <div className="flex flex-wrap gap-4 mt-3 text-sm">
           {Object.entries(frontmatter).map(([key, value]) => (
-            <div key={key} className="text-gray-400">
-              <span className="text-gray-500">{key}:</span>{' '}
-              <span className="text-gray-300">
+            <div key={key} className="text-slate-400">
+              <span className="text-slate-500">{key}:</span>{' '}
+              <span className="text-slate-300">
                 {Array.isArray(value) ? value.join(', ') : String(value)}
               </span>
             </div>
@@ -73,9 +84,15 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
         </div>
       )}
 
-      <div className="flex gap-4 mt-3 text-xs text-gray-500">
-        <span>Created {new Date(skill.createdAt).toLocaleDateString()}</span>
-        <span>Updated {new Date(skill.updatedAt).toLocaleDateString()}</span>
+      <div className="flex gap-5 mt-4 text-xs text-slate-500">
+        <span className="inline-flex items-center gap-1.5">
+          <Calendar className="w-3 h-3" />
+          Created {new Date(skill.createdAt).toLocaleDateString()}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Clock className="w-3 h-3" />
+          Updated {new Date(skill.updatedAt).toLocaleDateString()}
+        </span>
       </div>
     </div>
   );

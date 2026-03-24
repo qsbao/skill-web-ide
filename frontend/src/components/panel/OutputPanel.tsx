@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { Terminal } from 'lucide-react';
 import { useTestStore } from '../../stores/testStore';
 
 function colorize(text: string): string {
@@ -17,16 +18,19 @@ export function OutputPanel() {
   }, [output]);
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 font-mono text-xs">
+    <div className="h-full flex flex-col bg-surface-base">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-xs">
         {output.length === 0 ? (
-          <span className="text-gray-600">No output yet. Run a test to see results.</span>
+          <div className="flex items-center gap-2 text-slate-500 py-2">
+            <Terminal className="w-4 h-4" />
+            <span>No output yet. Run a test to see results.</span>
+          </div>
         ) : (
           output.map((line, i) => (
             <pre
               key={i}
-              className={`whitespace-pre-wrap break-all ${
-                line.stream === 'stderr' ? 'text-red-400' : 'text-gray-300'
+              className={`whitespace-pre-wrap break-all leading-relaxed ${
+                line.stream === 'stderr' ? 'text-red-400' : 'text-slate-300'
               }`}
             >
               {colorize(line.data)}

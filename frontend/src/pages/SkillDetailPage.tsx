@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../api/client';
 import { SkillHeader } from '../components/skill-detail/SkillHeader';
 import { MarkdownBody } from '../components/skill-detail/MarkdownBody';
@@ -41,23 +42,27 @@ export function SkillDetailPage() {
 
   if (loading) {
     return (
-      <div className="h-full bg-gray-900 flex items-center justify-center">
-        <span className="text-gray-500">Loading...</span>
+      <div className="h-full bg-surface-base flex flex-col items-center justify-center animate-fade-in">
+        <Loader2 className="w-8 h-8 text-accent animate-spin mb-3" />
+        <span className="text-slate-500 text-sm">Loading skill...</span>
       </div>
     );
   }
 
   if (error || !skill) {
     return (
-      <div className="h-full bg-gray-900 flex items-center justify-center">
-        <span className="text-red-400">{error || 'Skill not found'}</span>
+      <div className="h-full bg-surface-base flex flex-col items-center justify-center animate-fade-in">
+        <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+          <AlertCircle className="w-6 h-6 text-red-400" />
+        </div>
+        <span className="text-red-400 text-sm">{error || 'Skill not found'}</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-gray-900 overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="h-full bg-surface-base overflow-y-auto">
+      <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in">
         <SkillHeader skill={skill} frontmatter={readme.frontmatter} />
 
         <div className="mt-8">

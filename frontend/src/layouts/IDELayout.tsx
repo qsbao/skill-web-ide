@@ -23,7 +23,7 @@ export function IDELayout() {
   ];
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-surface-base">
       <Toolbar />
       <PanelGroup direction="vertical" className="flex-1">
         <Panel defaultSize={70} minSize={30}>
@@ -31,27 +31,34 @@ export function IDELayout() {
             <Panel defaultSize={20} minSize={15} maxSize={40}>
               <FileExplorer />
             </Panel>
-            <PanelResizeHandle className="w-1 bg-gray-700 hover:bg-blue-500 transition-colors" />
+            <PanelResizeHandle className="group relative w-px bg-border-subtle transition-colors hover:bg-accent">
+              <div className="absolute inset-y-0 -left-1 -right-1 z-10" />
+            </PanelResizeHandle>
             <Panel>
               <SkillEditor />
             </Panel>
           </PanelGroup>
         </Panel>
-        <PanelResizeHandle className="h-1 bg-gray-700 hover:bg-blue-500 transition-colors" />
+        <PanelResizeHandle className="group relative h-px bg-border-subtle transition-colors hover:bg-accent">
+          <div className="absolute inset-x-0 -top-1 -bottom-1 z-10" />
+        </PanelResizeHandle>
         <Panel defaultSize={30} minSize={10}>
           <div className="h-full flex flex-col">
-            <div className="flex bg-gray-800 border-b border-gray-700 shrink-0">
+            <div className="flex bg-surface-raised shrink-0">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setBottomTab(tab.id)}
-                  className={`px-3 py-1.5 text-xs border-r border-gray-700 transition-colors ${
+                  className={`px-4 py-2 text-xs font-medium transition-colors relative ${
                     bottomTab === tab.id
-                      ? 'bg-gray-900 text-white border-b-2 border-b-blue-500'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                      ? 'text-slate-100 bg-surface-base/50'
+                      : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
                   {tab.label}
+                  {bottomTab === tab.id && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
+                  )}
                 </button>
               ))}
             </div>

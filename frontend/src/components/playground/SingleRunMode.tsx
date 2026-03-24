@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Play, Square, Folder, FileText, Download, Terminal } from 'lucide-react';
 import { usePlaygroundStore } from '../../stores/playgroundStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { api } from '../../api/client';
@@ -14,18 +15,22 @@ function FileTree({ files, skillId, runId, depth = 0 }: { files: SkillFile[]; sk
       {files.map((file) => (
         <div key={file.path}>
           <div
-            className="flex items-center gap-1 py-0.5 hover:bg-gray-700 rounded px-1"
-            style={{ paddingLeft: `${depth * 12 + 4}px` }}
+            className="flex items-center gap-1.5 py-1 hover:bg-surface-overlay/50 rounded-md px-1.5 transition-colors"
+            style={{ paddingLeft: `${depth * 14 + 6}px` }}
           >
-            <span className="text-xs text-gray-400">{file.type === 'dir' ? '\u{1F4C1}' : '\u{1F4C4}'}</span>
-            <span className="text-xs text-gray-300 flex-1 truncate">{file.name}</span>
+            {file.type === 'dir' ? (
+              <Folder className="w-3.5 h-3.5 text-accent/70 shrink-0" />
+            ) : (
+              <FileText className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            )}
+            <span className="text-xs text-slate-300 flex-1 truncate">{file.name}</span>
             {file.type === 'file' && (
               <a
                 href={api.getRunDownloadUrl(skillId, runId, file.path)}
                 download
-                className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
+                className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent-hover shrink-0 transition-colors"
               >
-                Download
+                <Download className="w-3 h-3" />
               </a>
             )}
           </div>
@@ -82,53 +87,64 @@ export function SingleRunMode() {
 
   if (!selectedSkillId) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-600 text-sm">
-        Select a skill to get started
+      <div className="h-full flex flex-col items-center justify-center bg-surface-base animate-fade-in">
+        <div className="w-12 h-12 rounded-xl bg-surface-overlay/60 border border-border-subtle/50 flex items-center justify-center mb-4">
+          <Terminal className="w-6 h-6 text-slate-500" />
+        </div>
+        <span className="text-slate-500 text-sm">Select a skill to get started</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-surface-base">
       {/* Prompt area */}
-      <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-semibold text-gray-300">Single Run</span>
+      <div className="p-4 border-b border-border/40 bg-surface-raised">
+        <div className="flex items-center gap-2.5 mb-3">
+          <span className="text-sm font-semibold text-slate-200">Single Run</span>
           {singleRunning && (
-            <span className="inline-flex items-center gap-1 text-xs text-yellow-400">
-              <span className="animate-spin inline-block w-3 h-3 border border-yellow-400 border-t-transparent rounded-full" />
+            <span className="inline-flex items-center gap-1.5 text-xs text-yellow-400">
+              <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse-soft" />
               Running...
             </span>
           )}
           {!singleRunning && singleLastStatus === 'completed' && (
-            <span className="text-xs text-green-400 font-medium">Completed</span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              Completed
+            </span>
           )}
           {!singleRunning && (singleLastStatus === 'failed' || singleLastStatus === 'error') && (
-            <span className="text-xs text-red-400 font-medium">Failed</span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-red-400 font-medium">
+              <span className="w-2 h-2 rounded-full bg-red-400" />
+              Failed
+            </span>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Enter your prompt... (Ctrl+Enter to run)"
             rows={4}
-            className="flex-1 bg-gray-800 text-gray-200 text-sm p-3 rounded border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
+            className="input-base flex-1 resize-none font-sans"
           />
           <div className="flex flex-col gap-2">
             <button
               onClick={handleRun}
               disabled={singleRunning || !prompt.trim()}
-              className="text-sm bg-blue-700 px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 transition-colors text-white"
+              className="btn-primary gap-1.5"
             >
+              <Play className="w-3.5 h-3.5" />
               Run
             </button>
             {singleRunning && (
               <button
                 onClick={handleCancel}
-                className="text-sm bg-red-700 px-4 py-2 rounded hover:bg-red-600 transition-colors text-white"
+                className="btn-danger gap-1.5"
               >
+                <Square className="w-3.5 h-3.5" />
                 Cancel
               </button>
             )}
@@ -138,15 +154,18 @@ export function SingleRunMode() {
 
       {/* Output + Files */}
       <div className="flex-1 flex overflow-hidden">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs bg-surface-inset">
           {singleOutput.length === 0 ? (
-            <span className="text-gray-600">No output yet. Enter a prompt and click Run.</span>
+            <div className="flex items-center gap-2 text-slate-500">
+              <Terminal className="w-4 h-4" />
+              <span>No output yet. Enter a prompt and click Run.</span>
+            </div>
           ) : (
             singleOutput.map((line, i) => (
               <pre
                 key={i}
                 className={`whitespace-pre-wrap break-all ${
-                  line.stream === 'stderr' ? 'text-red-400' : 'text-gray-300'
+                  line.stream === 'stderr' ? 'text-red-400' : 'text-slate-300'
                 }`}
               >
                 {colorize(line.data)}
@@ -156,8 +175,8 @@ export function SingleRunMode() {
         </div>
 
         {!singleRunning && singleOutputFiles.length > 0 && (
-          <div className="w-64 border-l border-gray-700 overflow-y-auto p-3">
-            <div className="text-xs font-semibold text-gray-400 mb-2">Output Files</div>
+          <div className="w-64 border-l border-border/40 overflow-y-auto p-3 bg-surface-raised animate-slide-up">
+            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Output Files</div>
             <FileTree files={singleOutputFiles} skillId={selectedSkillId} runId={singleActiveRunId!} />
           </div>
         )}

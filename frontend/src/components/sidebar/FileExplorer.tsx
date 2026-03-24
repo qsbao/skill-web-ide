@@ -4,11 +4,38 @@ import { useSkillStore } from '../../stores/skillStore';
 import { useEditorStore } from '../../stores/editorStore';
 import { api } from '../../api/client';
 import type { SkillFile } from '@skill-ide/shared';
+import {
+  Folder,
+  FolderOpen,
+  FileText,
+  FileCode,
+  FileJson,
+  ChevronRight,
+  ChevronDown,
+  FilePlus,
+  FolderPlus,
+  Trash2,
+} from 'lucide-react';
 
 interface ContextMenuState {
   x: number;
   y: number;
   node?: SkillFile;
+}
+
+function getFileIcon(name: string) {
+  const ext = name.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'ts':
+    case 'tsx':
+    case 'js':
+    case 'jsx':
+      return <FileCode className="w-4 h-4 text-accent/70 shrink-0" />;
+    case 'json':
+      return <FileJson className="w-4 h-4 text-amber-400/70 shrink-0" />;
+    default:
+      return <FileText className="w-4 h-4 text-slate-500 shrink-0" />;
+  }
 }
 
 function FileNode({
@@ -21,7 +48,10 @@ function FileNode({
   onContext: (e: React.MouseEvent, node: SkillFile) => void;
 }) {
   const { openFile } = useEditorStore();
+  const activeTab = useEditorStore((s) => s.activeTab);
   const [expanded, setExpanded] = useState(true);
+
+  const isActive = node.type !== 'dir' && activeTab === node.path;
 
   const handleClick = async () => {
     if (node.type === 'dir') {
@@ -37,14 +67,34 @@ function FileNode({
       <div
         onClick={handleClick}
         onContextMenu={(e) => onContext(e, node)}
-        className={`flex items-center gap-1 px-2 py-0.5 text-sm cursor-pointer hover:bg-gray-700 ${
-          node.type === 'dir' ? 'text-yellow-300' : 'text-gray-300'
-        }`}
+        className={`group flex items-center gap-1.5 px-2 py-1 text-[13px] cursor-pointer rounded-md mx-1 transition-colors relative ${
+          isActive
+            ? 'bg-surface-overlay/60 text-slate-200'
+            : 'hover:bg-surface-overlay/50 text-slate-400 hover:text-slate-300'
+        } ${node.type === 'dir' ? 'text-slate-300 font-medium' : ''}`}
       >
-        <span className="text-xs">
-          {node.type === 'dir' ? (expanded ? '\u25BC' : '\u25B6') : '  '}
-        </span>
-        <span className="text-xs">{node.type === 'dir' ? '\u{1F4C1}' : '\u{1F4C4}'}</span>
+        {isActive && (
+          <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-accent" />
+        )}
+        {node.type === 'dir' ? (
+          <>
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            )}
+            {expanded ? (
+              <FolderOpen className="w-4 h-4 text-accent/70 shrink-0" />
+            ) : (
+              <Folder className="w-4 h-4 text-accent/70 shrink-0" />
+            )}
+          </>
+        ) : (
+          <>
+            <span className="w-3.5 shrink-0" />
+            {getFileIcon(node.name)}
+          </>
+        )}
         <span className="truncate">{node.name}</span>
       </div>
       {node.type === 'dir' && expanded && node.children && (
@@ -111,18 +161,20 @@ export function FileExplorer() {
 
   if (!activeSkillId) {
     return (
-      <div className="h-full bg-gray-800 flex items-center justify-center">
-        <span className="text-xs text-gray-500">No skill selected</span>
+      <div className="h-full bg-surface-raised flex items-center justify-center">
+        <span className="text-xs text-slate-500">No skill selected</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full bg-gray-800 overflow-y-auto flex flex-col">
-      <div className="flex-1 overflow-y-auto p-1" onContextMenu={handleRootContext}>
-        <div className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1">Files</div>
+    <div className="h-full bg-surface-raised overflow-y-auto flex flex-col">
+      <div className="flex-1 overflow-y-auto py-2" onContextMenu={handleRootContext}>
+        <div className="text-[11px] uppercase tracking-widest text-slate-500 font-medium px-3 py-1.5">
+          Files
+        </div>
         {loading ? (
-          <div className="text-xs text-gray-500 px-2">Loading...</div>
+          <div className="text-xs text-slate-500 px-3 animate-pulse-soft">Loading...</div>
         ) : (
           tree.map((node) => (
             <FileNode key={node.path} node={node} skillId={activeSkillId} onContext={handleContext} />
@@ -132,14 +184,14 @@ export function FileExplorer() {
 
       {/* Create input */}
       {creating && (
-        <div className="p-2 border-t border-gray-700">
-          <div className="text-xs text-gray-400 mb-1">
-            New {creating.isDir ? 'folder' : 'file'} in {creating.parentPath}
+        <div className="p-2.5 border-t border-border-subtle">
+          <div className="text-[11px] text-slate-500 mb-1.5">
+            New {creating.isDir ? 'folder' : 'file'} in <span className="font-mono text-slate-400">{creating.parentPath}</span>
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             <input
               autoFocus
-              className="flex-1 bg-gray-700 text-xs px-2 py-1 rounded border border-gray-600 text-white outline-none focus:border-blue-500"
+              className="input-base !text-xs !py-1.5 !px-2.5 flex-1"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -147,8 +199,8 @@ export function FileExplorer() {
                 if (e.key === 'Escape') setCreating(null);
               }}
             />
-            <button onClick={handleCreateConfirm} className="text-xs bg-blue-600 px-2 py-1 rounded">OK</button>
-            <button onClick={() => setCreating(null)} className="text-xs text-gray-400">Cancel</button>
+            <button onClick={handleCreateConfirm} className="btn-primary !text-xs !px-2.5 !py-1">OK</button>
+            <button onClick={() => setCreating(null)} className="btn-ghost !text-xs !px-2 !py-1">Cancel</button>
           </div>
         </div>
       )}
@@ -157,28 +209,31 @@ export function FileExplorer() {
       {ctx && (
         <div
           ref={menuRef}
-          className="fixed bg-gray-700 border border-gray-600 rounded shadow-lg py-1 z-50"
+          className="fixed w-44 bg-surface-overlay border border-border rounded-lg shadow-float py-1.5 z-50 animate-fade-in"
           style={{ left: ctx.x, top: ctx.y }}
         >
           <button
             onClick={() => handleNewFile(false)}
-            className="block w-full text-left px-3 py-1 text-xs text-gray-200 hover:bg-gray-600"
+            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-surface-raised/80 hover:text-slate-100 transition-colors"
           >
+            <FilePlus className="w-3.5 h-3.5 text-slate-500" />
             New File
           </button>
           <button
             onClick={() => handleNewFile(true)}
-            className="block w-full text-left px-3 py-1 text-xs text-gray-200 hover:bg-gray-600"
+            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-surface-raised/80 hover:text-slate-100 transition-colors"
           >
+            <FolderPlus className="w-3.5 h-3.5 text-slate-500" />
             New Folder
           </button>
           {ctx.node && (
             <>
-              <div className="border-t border-gray-600 my-1" />
+              <div className="border-t border-border-subtle my-1.5 mx-2" />
               <button
                 onClick={handleDeleteFile}
-                className="block w-full text-left px-3 py-1 text-xs text-red-400 hover:bg-gray-600"
+                className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors"
               >
+                <Trash2 className="w-3.5 h-3.5" />
                 Delete
               </button>
             </>

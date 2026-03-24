@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { RefreshCw, Send, MessageSquare } from 'lucide-react';
 import { usePlaygroundStore } from '../../stores/playgroundStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { MessageBubble } from './MessageBubble';
@@ -45,35 +46,44 @@ export function ChatMode() {
 
   if (!selectedSkillId) {
     return (
-      <div className="h-full flex items-center justify-center text-gray-600 text-sm">
-        Select a skill to start chatting
+      <div className="h-full flex flex-col items-center justify-center bg-surface-base animate-fade-in">
+        <div className="w-12 h-12 rounded-xl bg-surface-overlay/60 border border-border-subtle/50 flex items-center justify-center mb-4">
+          <MessageSquare className="w-6 h-6 text-slate-500" />
+        </div>
+        <span className="text-slate-500 text-sm">Select a skill to start chatting</span>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-surface-base">
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-700">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-300">Chat</span>
+      <div className="flex items-center justify-between px-5 py-2.5 bg-surface-raised border-b border-border/40">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-slate-200">Chat</span>
           {sessionId && (
-            <span className="text-xs text-gray-500">Session: {sessionId.slice(0, 8)}...</span>
+            <span className="badge font-mono text-[11px]">
+              {sessionId.slice(0, 8)}
+            </span>
           )}
         </div>
         <button
           onClick={clearChat}
-          className="text-xs text-gray-400 hover:text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+          className="btn-ghost text-xs gap-1.5"
         >
+          <RefreshCw className="w-3.5 h-3.5" />
           New Conversation
         </button>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-600 text-sm mt-8">
-            Send a message to start the conversation
+          <div className="flex flex-col items-center justify-center h-full animate-fade-in">
+            <div className="w-10 h-10 rounded-lg bg-surface-overlay/50 border border-border-subtle/40 flex items-center justify-center mb-3">
+              <MessageSquare className="w-5 h-5 text-slate-500" />
+            </div>
+            <span className="text-slate-500 text-sm">Send a message to start the conversation</span>
           </div>
         ) : (
           messages.map((msg, i) => (
@@ -87,22 +97,26 @@ export function ChatMode() {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex gap-2">
+      <div className="p-4">
+        <div className="card px-4 py-3 shadow-float flex gap-3 items-end">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
             rows={2}
-            className="flex-1 bg-gray-800 text-gray-200 text-sm p-3 rounded border border-gray-600 focus:border-blue-500 focus:outline-none resize-none"
+            className="input-base flex-1 resize-none !rounded-lg text-sm"
           />
           <button
             onClick={handleSend}
             disabled={chatRunning || !input.trim()}
-            className="self-end text-sm bg-blue-700 px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50 transition-colors text-white"
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: 'var(--accent-muted)',
+              boxShadow: '0 0 12px -3px var(--accent-glow)',
+            }}
           >
-            Send
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>

@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, MessageSquare, Zap } from 'lucide-react';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { usePlaygroundStore, type PlaygroundMode } from '../stores/playgroundStore';
 import { SkillSelector } from '../components/playground/SkillSelector';
 import { ChatMode } from '../components/playground/ChatMode';
 import { SingleRunMode } from '../components/playground/SingleRunMode';
 
-const MODES: { key: PlaygroundMode; label: string }[] = [
-  { key: 'chat', label: 'Chat' },
-  { key: 'single', label: 'Single Run' },
+const MODES: { key: PlaygroundMode; label: string; icon: typeof MessageSquare }[] = [
+  { key: 'chat', label: 'Chat', icon: MessageSquare },
+  { key: 'single', label: 'Single Run', icon: Zap },
 ];
 
 export function PlaygroundPage() {
@@ -33,33 +35,45 @@ export function PlaygroundPage() {
   };
 
   return (
-    <div className="h-screen bg-gray-900 flex flex-col">
+    <div className="h-screen bg-surface-base flex flex-col">
       {/* Top bar */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-3 flex items-center gap-4">
+      <div className="bg-surface-raised border-b border-border/40 px-6 py-3 flex items-center gap-4">
         <button
           onClick={() => navigate('/dashboard')}
-          className="text-sm text-gray-400 hover:text-white transition-colors"
+          className="btn-ghost gap-1.5 text-xs"
         >
-          &larr; Dashboard
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Dashboard
         </button>
-        <h1 className="text-sm font-semibold text-white">Playground</h1>
+
+        <div className="h-4 w-px bg-border-subtle" />
+
+        <h1 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Playground</h1>
+
+        <ThemeToggle />
+
         <SkillSelector value={selectedSkillId} onChange={handleSkillChange} />
 
-        {/* Mode tabs */}
-        <div className="flex ml-auto bg-gray-900 rounded p-0.5">
-          {MODES.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setMode(m.key)}
-              className={`text-xs px-3 py-1.5 rounded transition-colors ${
-                mode === m.key
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+        {/* Mode pill toggle */}
+        <div className="flex ml-auto bg-surface-inset rounded-lg p-0.5 border border-border-subtle/50">
+          {MODES.map((m) => {
+            const Icon = m.icon;
+            const isActive = mode === m.key;
+            return (
+              <button
+                key={m.key}
+                onClick={() => setMode(m.key)}
+                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-md transition-all duration-150 font-medium ${
+                  isActive
+                    ? 'bg-accent-muted text-white shadow-glow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-overlay/50'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {m.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

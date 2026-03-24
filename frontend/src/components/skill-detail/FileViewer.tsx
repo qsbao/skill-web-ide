@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronRight, FileText, Folder, FileCode } from 'lucide-react';
+import { useThemeStore } from '../../stores/themeStore';
 import Editor from '@monaco-editor/react';
 import { api } from '../../api/client';
 import type { SkillFile } from '@skill-ide/shared';
@@ -35,13 +37,27 @@ function FileNode({
     <div>
       <div
         onClick={handleClick}
-        className={`flex items-center gap-1 px-2 py-0.5 text-sm cursor-pointer hover:bg-gray-700 ${
-          isSelected ? 'bg-gray-700 text-white' : node.type === 'dir' ? 'text-yellow-300' : 'text-gray-300'
-        }`}
+        className={`flex items-center gap-1.5 px-2 py-1 text-sm cursor-pointer rounded-md transition-all duration-100 ${
+          isSelected
+            ? 'bg-accent-subtle text-slate-200 border-l-2 border-accent'
+            : 'hover:bg-surface-overlay/60 border-l-2 border-transparent'
+        } ${node.type === 'dir' ? 'text-slate-300' : 'text-slate-400'}`}
       >
-        <span className="text-xs">
-          {node.type === 'dir' ? (expanded ? '\u25BC' : '\u25B6') : '  '}
-        </span>
+        {node.type === 'dir' ? (
+          <>
+            {expanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            )}
+            <Folder className="w-3.5 h-3.5 text-accent/70 shrink-0" />
+          </>
+        ) : (
+          <>
+            <span className="w-3.5" />
+            <FileCode className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          </>
+        )}
         <span className="truncate">{node.name}</span>
       </div>
       {node.type === 'dir' && expanded && node.children && (
@@ -74,6 +90,7 @@ function getLanguage(path: string): string {
 export function FileViewer({ tree, skillId }: FileViewerProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
+  const currentTheme = useThemeStore((s) => s.theme);
 
   const handleSelect = (path: string, content: string) => {
     setSelectedPath(path);
@@ -81,13 +98,14 @@ export function FileViewer({ tree, skillId }: FileViewerProps) {
   };
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
-      <div className="text-xs text-gray-400 uppercase tracking-wide px-3 py-2 bg-gray-800 border-b border-gray-700">
+    <div className="rounded-xl border border-border/40 overflow-hidden">
+      <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-4 py-2.5 bg-surface-raised border-b border-border/40 flex items-center gap-2">
+        <FileText className="w-3.5 h-3.5" />
         Files
       </div>
       <div className="flex" style={{ height: '400px' }}>
         {/* Tree */}
-        <div className="w-56 shrink-0 bg-gray-800 overflow-y-auto border-r border-gray-700 p-1">
+        <div className="w-56 shrink-0 bg-surface-raised overflow-y-auto border-r border-border/40 p-1.5">
           {tree.map((node) => (
             <FileNode
               key={node.path}
@@ -100,15 +118,16 @@ export function FileViewer({ tree, skillId }: FileViewerProps) {
         </div>
 
         {/* Editor */}
-        <div className="flex-1 bg-gray-900">
+        <div className="flex-1 bg-surface-base">
           {selectedPath ? (
             <div className="h-full flex flex-col">
-              <div className="text-xs text-gray-400 px-3 py-1.5 bg-gray-800 border-b border-gray-700">
+              <div className="text-xs text-slate-400 font-mono px-4 py-2 bg-surface-raised border-b border-border/40 flex items-center gap-2">
+                <FileCode className="w-3 h-3 text-slate-500" />
                 {selectedPath}
               </div>
               <div className="flex-1">
                 <Editor
-                  theme="vs-dark"
+                  theme={currentTheme === 'dark' ? 'vs-dark' : 'light'}
                   language={getLanguage(selectedPath)}
                   value={fileContent}
                   options={{
@@ -123,8 +142,9 @@ export function FileViewer({ tree, skillId }: FileViewerProps) {
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-gray-500 text-sm">
-              Select a file to view
+            <div className="h-full flex flex-col items-center justify-center">
+              <FileText className="w-8 h-8 text-slate-600 mb-2" />
+              <span className="text-slate-500 text-sm">Select a file to view</span>
             </div>
           )}
         </div>
