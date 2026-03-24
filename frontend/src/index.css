@@ -166,6 +166,14 @@
     border-color: rgba(239, 68, 68, 0.3);
   }
 
+  /* Size modifiers — compose with any btn-* variant */
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs gap-1 rounded-lg;
+  }
+  .btn-xs {
+    @apply px-2 py-1 text-xs gap-1 rounded-md;
+  }
+
   .input-base {
     @apply w-full text-sm px-3 py-2 rounded-lg
       outline-none transition-all duration-150;
@@ -216,6 +224,33 @@
   .text-theme-muted { color: var(--text-muted); }
   .text-theme-accent { color: var(--accent); }
   .hover\:text-theme-primary:hover { color: var(--text-primary); }
+
+  /* Accent hover utility */
+  .hover\:bg-accent-subtle:hover { background: var(--accent-subtle); }
+  .bg-accent-subtle { background: var(--accent-subtle); }
+
+  /* Dashboard header with gradient fade border */
+  .header-bar {
+    background: rgb(var(--surface-raised));
+    border-bottom: 1px solid rgb(var(--border-default) / 0.4);
+  }
+
+  /* Skill detail hero gradient */
+  .hero-gradient {
+    background: linear-gradient(180deg, rgb(var(--surface-overlay)) 0%, transparent 100%);
+  }
+
+  /* Chat input bar — card-like but no hover transforms */
+  .chat-input-bar {
+    @apply rounded-xl;
+    background: linear-gradient(
+      145deg,
+      rgb(var(--surface-raised)) 0%,
+      rgb(var(--surface-raised) / 0.7) 100%
+    );
+    border: 1px solid rgb(var(--border-default) / 0.4);
+    box-shadow: 0 2px 8px -2px rgba(0, 0, 0, var(--shadow-strength));
+  }
 
   /* Markdown prose for chat bubbles */
   .prose-chat {

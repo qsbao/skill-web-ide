@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, PlayCircle, Layers } from 'lucide-react';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { Plus, Upload, Layers } from 'lucide-react';
 import { SearchBar } from '../components/dashboard/SearchBar';
 import { SkillCard } from '../components/dashboard/SkillCard';
 import { UploadSkillModal } from '../components/dashboard/UploadSkillModal';
@@ -46,30 +45,11 @@ export function Dashboard() {
   };
 
   return (
-    <div className="h-full flex flex-col" style={{ background: 'rgb(var(--surface-base))' }}>
+    <div className="h-full flex flex-col bg-surface-base">
       {/* Header */}
-      <div
-        className="px-6 py-4"
-        style={{
-          background: 'rgb(var(--surface-raised))',
-          borderBottom: '1px solid transparent',
-          backgroundImage: 'linear-gradient(rgb(var(--surface-raised)), rgb(var(--surface-raised))), linear-gradient(90deg, transparent, rgb(var(--border-default) / 0.6), transparent)',
-          backgroundClip: 'padding-box, border-box',
-          backgroundOrigin: 'padding-box, border-box',
-        }}
-      >
+      <div className="header-bar px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Skill Library</h1>
-            <button
-              onClick={() => navigate('/playground')}
-              className="btn-ghost text-xs gap-1"
-            >
-              <PlayCircle className="w-3.5 h-3.5" />
-              Playground
-            </button>
-            <ThemeToggle />
-          </div>
+          <h1 className="text-lg font-semibold text-theme-primary">Skill Library</h1>
           {creating ? (
             <div className="flex items-center gap-2">
               <input

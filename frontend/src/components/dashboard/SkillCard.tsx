@@ -24,12 +24,12 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
     >
       <div className="flex items-start justify-between mb-2">
         <h3 className="text-sm font-semibold text-theme-primary truncate">{skill.name}</h3>
-        <span className="badge shrink-0 ml-2 text-[10px] py-0 px-1.5" style={{ color: 'var(--accent)', borderColor: 'rgba(99, 102, 241, 0.25)', background: 'var(--accent-subtle)' }}>
+        <span className="badge shrink-0 ml-2 text-[10px] py-0 px-1.5 text-theme-accent bg-accent-subtle border-accent/25">
           v{skill.version}
         </span>
       </div>
 
-      <div className="text-xs mb-2" style={{ color: 'var(--accent)' }}>@{skill.author}</div>
+      <div className="text-xs mb-2 text-theme-accent">@{skill.author}</div>
 
       {skill.description && (
         <p className="text-xs text-theme-secondary mb-3 line-clamp-2">{skill.description}</p>
@@ -48,7 +48,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgb(var(--border-subtle) / 0.5)' }}>
+      <div className="flex items-center justify-between pt-2 border-t border-border-subtle/50">
         <span className="text-xs text-theme-muted">
           {new Date(skill.updatedAt).toLocaleDateString()}
         </span>
@@ -69,9 +69,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
               navigate(`/ide/${idWithoutAt}`);
             }}
             title="Edit in IDE"
-            className="p-1.5 rounded-lg transition-colors" style={{ color: 'var(--accent)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-subtle)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            className="p-1.5 rounded-lg transition-colors text-theme-accent hover:bg-accent-subtle"
           >
             <Code2 className="w-3.5 h-3.5" />
           </button>
@@ -81,10 +79,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
               onCopy(skill.id);
             }}
             title="Duplicate Skill"
-            className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary transition-colors"
-            style={{}}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgb(var(--surface-overlay) / 0.6)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary hover:bg-surface-overlay/60 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" />
           </button>

@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Play, Code2, ArrowLeft, Calendar, Clock } from 'lucide-react';
-import { ThemeToggle } from '../ThemeToggle';
+import { Play, Code2, Calendar, Clock } from 'lucide-react';
 import type { SkillMeta } from '@skill-ide/shared';
 
 interface SkillHeaderProps {
@@ -13,12 +12,7 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
   const idWithoutAt = skill.id.startsWith('@') ? skill.id.slice(1) : skill.id;
 
   return (
-    <div
-      className="rounded-xl border border-border/40 pb-6 px-6 pt-6"
-      style={{
-        background: 'linear-gradient(180deg, rgb(var(--surface-overlay)) 0%, transparent 100%)',
-      }}
-    >
+    <div className="hero-gradient rounded-xl border border-border/40 pb-6 px-6 pt-6">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-theme-primary">{skill.name}</h1>
@@ -42,14 +36,6 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
             <Code2 className="w-3.5 h-3.5" />
             Open in IDE
           </button>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="btn-ghost"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back
-          </button>
-          <ThemeToggle />
         </div>
       </div>
 

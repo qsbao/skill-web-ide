@@ -100,23 +100,19 @@ export function ChatMode() {
 
       {/* Input */}
       <div className="p-4">
-        <div className="card px-4 py-3 shadow-float flex gap-3 items-end">
+        <div className="chat-input-bar px-4 py-3 shadow-float flex gap-3 items-end">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
             rows={2}
-            className="input-base flex-1 resize-none !rounded-lg text-sm"
+            className="input-base flex-1 resize-none rounded-lg text-sm min-h-[3rem] max-h-32"
           />
           <button
             onClick={handleSend}
             disabled={chatRunning || !input.trim()}
-            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              background: 'var(--accent-muted)',
-              boxShadow: '0 0 12px -3px var(--accent-glow)',
-            }}
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed bg-accent-muted shadow-glow-sm"
           >
             <Send className="w-4 h-4" />
           </button>

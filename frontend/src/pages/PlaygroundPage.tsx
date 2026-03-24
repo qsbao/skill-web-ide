@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, MessageSquare, Zap } from 'lucide-react';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { ExternalLink, MessageSquare, Zap } from 'lucide-react';
 import { usePlaygroundStore, type PlaygroundMode } from '../stores/playgroundStore';
 import { SkillSelector } from '../components/playground/SkillSelector';
 import { ChatMode } from '../components/playground/ChatMode';
@@ -35,23 +34,9 @@ export function PlaygroundPage() {
   };
 
   return (
-    <div className="h-screen bg-surface-base flex flex-col">
-      {/* Top bar */}
-      <div className="bg-surface-raised border-b border-border/40 px-6 py-3 flex items-center gap-4">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="btn-ghost gap-1.5 text-xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Dashboard
-        </button>
-
-        <div className="h-4 w-px bg-border-subtle" />
-
-        <h1 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Playground</h1>
-
-        <ThemeToggle />
-
+    <div className="h-full bg-surface-base flex flex-col">
+      {/* Sub-bar for playground controls */}
+      <div className="h-10 bg-surface-raised border-b border-border-subtle flex items-center px-4 gap-3 shrink-0">
         <SkillSelector value={selectedSkillId} onChange={handleSkillChange} />
 
         {selectedSkillId && (
@@ -60,7 +45,7 @@ export function PlaygroundPage() {
               const slug = selectedSkillId.startsWith('@') ? selectedSkillId.slice(1) : selectedSkillId;
               navigate(`/skills/${slug}`);
             }}
-            className="btn-ghost text-xs gap-1"
+            className="btn-ghost btn-xs"
             title="View skill details"
           >
             <ExternalLink className="w-3.5 h-3.5" />

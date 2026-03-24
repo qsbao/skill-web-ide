@@ -28,11 +28,21 @@ function getFileIcon(name: string) {
   switch (ext) {
     case 'ts':
     case 'tsx':
+      return <FileCode className="w-4 h-4 text-blue-400/70 shrink-0" />;
     case 'js':
     case 'jsx':
-      return <FileCode className="w-4 h-4 text-accent/70 shrink-0" />;
+      return <FileCode className="w-4 h-4 text-yellow-400/70 shrink-0" />;
     case 'json':
       return <FileJson className="w-4 h-4 text-amber-400/70 shrink-0" />;
+    case 'md':
+    case 'mdx':
+      return <FileText className="w-4 h-4 text-sky-400/70 shrink-0" />;
+    case 'css':
+    case 'scss':
+      return <FileCode className="w-4 h-4 text-purple-400/70 shrink-0" />;
+    case 'yaml':
+    case 'yml':
+      return <FileText className="w-4 h-4 text-rose-400/70 shrink-0" />;
     default:
       return <FileText className="w-4 h-4 text-theme-muted shrink-0" />;
   }
@@ -122,14 +132,21 @@ export function FileExplorer() {
     return () => window.removeEventListener('click', handler);
   }, []);
 
+  const clampMenu = (x: number, y: number) => ({
+    x: Math.min(x, window.innerWidth - 200),
+    y: Math.min(y, window.innerHeight - 160),
+  });
+
   const handleContext = (e: React.MouseEvent, node: SkillFile) => {
     e.preventDefault();
-    setCtx({ x: e.clientX, y: e.clientY, node });
+    const pos = clampMenu(e.clientX, e.clientY);
+    setCtx({ ...pos, node });
   };
 
   const handleRootContext = (e: React.MouseEvent) => {
     e.preventDefault();
-    setCtx({ x: e.clientX, y: e.clientY });
+    const pos = clampMenu(e.clientX, e.clientY);
+    setCtx(pos);
   };
 
   const handleNewFile = (isDir: boolean) => {
@@ -170,8 +187,8 @@ export function FileExplorer() {
   return (
     <div className="h-full bg-surface-raised overflow-y-auto flex flex-col">
       <div className="flex-1 overflow-y-auto py-2" onContextMenu={handleRootContext}>
-        <div className="text-[11px] uppercase tracking-widest text-theme-muted font-medium px-3 py-1.5">
-          Files
+        <div className="text-[11px] uppercase tracking-widest text-theme-muted font-medium px-3 py-1.5 truncate" title={activeSkillId || 'Files'}>
+          {activeSkillId || 'Files'}
         </div>
         {loading ? (
           <div className="text-xs text-theme-muted px-3 animate-pulse-soft">Loading...</div>
@@ -191,7 +208,7 @@ export function FileExplorer() {
           <div className="flex gap-1.5">
             <input
               autoFocus
-              className="input-base !text-xs !py-1.5 !px-2.5 flex-1"
+              className="input-base text-xs py-1.5 px-2.5 flex-1"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
@@ -199,8 +216,8 @@ export function FileExplorer() {
                 if (e.key === 'Escape') setCreating(null);
               }}
             />
-            <button onClick={handleCreateConfirm} className="btn-primary !text-xs !px-2.5 !py-1">OK</button>
-            <button onClick={() => setCreating(null)} className="btn-ghost !text-xs !px-2 !py-1">Cancel</button>
+            <button onClick={handleCreateConfirm} className="btn-primary btn-xs">OK</button>
+            <button onClick={() => setCreating(null)} className="btn-ghost btn-xs">Cancel</button>
           </div>
         </div>
       )}
