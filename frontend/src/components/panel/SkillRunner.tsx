@@ -22,9 +22,9 @@ function FileTree({ files, skillId, runId, depth = 0 }: { files: SkillFile[]; sk
             {file.type === 'dir' ? (
               <Folder className="w-3.5 h-3.5 text-accent/70 shrink-0" />
             ) : (
-              <FileText className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <FileText className="w-3.5 h-3.5 text-theme-muted shrink-0" />
             )}
-            <span className="text-xs text-slate-300 flex-1 truncate">{file.name}</span>
+            <span className="text-xs text-theme-primary flex-1 truncate">{file.name}</span>
             {file.type === 'file' && (
               <a
                 href={api.getRunDownloadUrl(skillId, runId, file.path)}
@@ -82,8 +82,8 @@ export function SkillRunner() {
   if (!activeSkillId) {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-surface-base">
-        <Terminal className="w-6 h-6 text-slate-600 mb-2" />
-        <span className="text-slate-500 text-xs">Select a skill to run</span>
+        <Terminal className="w-6 h-6 text-theme-muted mb-2" />
+        <span className="text-theme-muted text-xs">Select a skill to run</span>
       </div>
     );
   }
@@ -93,7 +93,7 @@ export function SkillRunner() {
       {/* Prompt input */}
       <div className="p-3 border-b border-border/40 bg-surface-raised">
         <div className="flex items-center gap-2.5 mb-2">
-          <span className="text-xs font-semibold text-slate-200">Run Skill</span>
+          <span className="text-xs font-semibold text-theme-primary">Run Skill</span>
           {running && (
             <span className="inline-flex items-center gap-1.5 text-xs text-yellow-400">
               <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse-soft" />
@@ -155,7 +155,7 @@ export function SkillRunner() {
         {/* Log output */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-xs bg-surface-inset">
           {output.length === 0 ? (
-            <div className="flex items-center gap-2 text-slate-500 py-1">
+            <div className="flex items-center gap-2 text-theme-muted py-1">
               <Terminal className="w-4 h-4" />
               <span>No output yet. Enter a prompt and click Run.</span>
             </div>
@@ -164,7 +164,7 @@ export function SkillRunner() {
               <pre
                 key={i}
                 className={`whitespace-pre-wrap break-all leading-relaxed ${
-                  line.stream === 'stderr' ? 'text-red-400' : 'text-slate-300'
+                  line.stream === 'stderr' ? 'text-red-400' : 'text-theme-primary'
                 }`}
               >
                 {colorize(line.data)}
@@ -176,7 +176,7 @@ export function SkillRunner() {
         {/* Output files panel */}
         {!running && outputFiles.length > 0 && (
           <div className="w-60 border-l border-border/40 overflow-y-auto p-2.5 bg-surface-raised animate-slide-up">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Output Files</div>
+            <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wider mb-2">Output Files</div>
             <FileTree files={outputFiles} skillId={activeSkillId} runId={activeRunId!} />
           </div>
         )}

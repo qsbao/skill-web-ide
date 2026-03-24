@@ -48,9 +48,9 @@ export function ChatMode() {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-surface-base animate-fade-in">
         <div className="w-12 h-12 rounded-xl bg-surface-overlay/60 border border-border-subtle/50 flex items-center justify-center mb-4">
-          <MessageSquare className="w-6 h-6 text-slate-500" />
+          <MessageSquare className="w-6 h-6 text-theme-muted" />
         </div>
-        <span className="text-slate-500 text-sm">Select a skill to start chatting</span>
+        <span className="text-theme-muted text-sm">Select a skill to start chatting</span>
       </div>
     );
   }
@@ -60,7 +60,7 @@ export function ChatMode() {
       {/* Header bar */}
       <div className="flex items-center justify-between px-5 py-2.5 bg-surface-raised border-b border-border/40">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold text-slate-200">Chat</span>
+          <span className="text-sm font-semibold text-theme-primary">Chat</span>
           {sessionId && (
             <span className="badge font-mono text-[11px]">
               {sessionId.slice(0, 8)}
@@ -81,9 +81,9 @@ export function ChatMode() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full animate-fade-in">
             <div className="w-10 h-10 rounded-lg bg-surface-overlay/50 border border-border-subtle/40 flex items-center justify-center mb-3">
-              <MessageSquare className="w-5 h-5 text-slate-500" />
+              <MessageSquare className="w-5 h-5 text-theme-muted" />
             </div>
-            <span className="text-slate-500 text-sm">Send a message to start the conversation</span>
+            <span className="text-theme-muted text-sm">Send a message to start the conversation</span>
           </div>
         ) : (
           messages.map((msg, i) => (

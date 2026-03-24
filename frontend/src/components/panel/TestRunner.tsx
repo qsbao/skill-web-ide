@@ -20,7 +20,7 @@ export function TestRunner() {
     <div className="h-full flex flex-col bg-surface-base">
       <div className="p-3 border-b border-border/40">
         <div className="flex items-center gap-2.5 mb-2.5">
-          <span className="text-xs font-semibold text-slate-200">Test Runner</span>
+          <span className="text-xs font-semibold text-theme-primary">Test Runner</span>
           {running && (
             <span className="inline-flex items-center gap-1.5 text-xs text-yellow-400">
               <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse-soft" />
@@ -69,8 +69,8 @@ export function TestRunner() {
       </div>
       {!activeSkillId && (
         <div className="flex-1 flex flex-col items-center justify-center">
-          <Beaker className="w-6 h-6 text-slate-600 mb-2" />
-          <span className="text-slate-500 text-xs">Select a skill to run tests</span>
+          <Beaker className="w-6 h-6 text-theme-muted mb-2" />
+          <span className="text-theme-muted text-xs">Select a skill to run tests</span>
         </div>
       )}
     </div>

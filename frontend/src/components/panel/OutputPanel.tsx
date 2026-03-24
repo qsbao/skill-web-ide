@@ -21,7 +21,7 @@ export function OutputPanel() {
     <div className="h-full flex flex-col bg-surface-base">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 font-mono text-xs">
         {output.length === 0 ? (
-          <div className="flex items-center gap-2 text-slate-500 py-2">
+          <div className="flex items-center gap-2 text-theme-muted py-2">
             <Terminal className="w-4 h-4" />
             <span>No output yet. Run a test to see results.</span>
           </div>
@@ -30,7 +30,7 @@ export function OutputPanel() {
             <pre
               key={i}
               className={`whitespace-pre-wrap break-all leading-relaxed ${
-                line.stream === 'stderr' ? 'text-red-400' : 'text-slate-300'
+                line.stream === 'stderr' ? 'text-red-400' : 'text-theme-primary'
               }`}
             >
               {colorize(line.data)}

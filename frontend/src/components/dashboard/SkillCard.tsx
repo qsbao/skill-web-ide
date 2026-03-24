@@ -23,7 +23,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
       className="card p-4 cursor-pointer group"
     >
       <div className="flex items-start justify-between mb-2">
-        <h3 className="text-sm font-semibold text-slate-200 truncate">{skill.name}</h3>
+        <h3 className="text-sm font-semibold text-theme-primary truncate">{skill.name}</h3>
         <span className="badge shrink-0 ml-2 text-[10px] py-0 px-1.5" style={{ color: 'var(--accent)', borderColor: 'rgba(99, 102, 241, 0.25)', background: 'var(--accent-subtle)' }}>
           v{skill.version}
         </span>
@@ -32,7 +32,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
       <div className="text-xs mb-2" style={{ color: 'var(--accent)' }}>@{skill.author}</div>
 
       {skill.description && (
-        <p className="text-xs text-slate-400 mb-3 line-clamp-2">{skill.description}</p>
+        <p className="text-xs text-theme-secondary mb-3 line-clamp-2">{skill.description}</p>
       )}
 
       {skill.tags.length > 0 && (
@@ -49,7 +49,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
       )}
 
       <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid rgb(var(--border-subtle) / 0.5)' }}>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-theme-muted">
           {new Date(skill.updatedAt).toLocaleDateString()}
         </span>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -81,7 +81,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
               onCopy(skill.id);
             }}
             title="Duplicate Skill"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
+            className="p-1.5 rounded-lg text-theme-secondary hover:text-theme-primary transition-colors"
             style={{}}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgb(var(--surface-overlay) / 0.6)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}

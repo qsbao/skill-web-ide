@@ -32,8 +32,8 @@ export function SkillEditor() {
 
   if (tabs.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-surface-base text-slate-500 gap-3">
-        <FileCode className="w-10 h-10 text-slate-600" />
+      <div className="h-full flex flex-col items-center justify-center bg-surface-base text-theme-muted gap-3">
+        <FileCode className="w-10 h-10 text-theme-muted" />
         <span className="text-sm">Select a file to edit</span>
       </div>
     );
@@ -49,8 +49,8 @@ export function SkillEditor() {
             onClick={() => setActiveTab(tab.path)}
             className={`group flex items-center gap-1.5 px-3.5 py-2 text-xs cursor-pointer shrink-0 transition-colors relative ${
               tab.path === activeTab
-                ? 'bg-surface-base text-slate-100'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-surface-overlay/30'
+                ? 'bg-surface-base text-theme-primary'
+                : 'text-theme-muted hover:text-theme-primary hover:bg-surface-overlay/30'
             }`}
           >
             <span>{tab.name}</span>
@@ -60,7 +60,7 @@ export function SkillEditor() {
                 e.stopPropagation();
                 closeTab(tab.path);
               }}
-              className="ml-0.5 text-slate-600 hover:text-slate-200 transition-colors opacity-0 group-hover:opacity-100"
+              className="ml-0.5 text-theme-muted hover:text-theme-primary transition-colors opacity-0 group-hover:opacity-100"
             >
               <X className="w-3 h-3" />
             </button>

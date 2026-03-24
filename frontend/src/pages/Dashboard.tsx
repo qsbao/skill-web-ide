@@ -122,8 +122,8 @@ export function Dashboard() {
       <div className="flex-1 overflow-y-auto p-6">
         {filteredSkills.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center mt-16 gap-4">
-            <Layers className="w-16 h-16 text-slate-600" />
-            <p className="text-sm text-slate-500">
+            <Layers className="w-16 h-16 text-theme-muted" />
+            <p className="text-sm text-theme-muted">
               {searchQuery ? 'No skills match your search.' : 'No skills yet. Create one to get started.'}
             </p>
           </div>

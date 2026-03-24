@@ -53,23 +53,23 @@ export function SkillSelector({ value, onChange }: SkillSelectorProps) {
         }}
       >
         {selected ? (
-          <span className="text-slate-200 truncate flex-1">
+          <span className="text-theme-primary truncate flex-1">
             <span className="text-accent">{selected.id}</span>
             {selected.description && (
-              <span className="text-slate-500 ml-2">-- {selected.description}</span>
+              <span className="text-theme-muted ml-2">-- {selected.description}</span>
             )}
           </span>
         ) : (
-          <span className="text-slate-500 flex-1">Select a skill...</span>
+          <span className="text-theme-muted flex-1">Select a skill...</span>
         )}
-        <ChevronDown className={`w-4 h-4 text-slate-500 ml-2 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 text-theme-muted ml-2 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div className="absolute z-50 top-full mt-1.5 w-full bg-surface-overlay border border-border/60 rounded-xl shadow-float max-h-64 overflow-hidden flex flex-col animate-slide-down">
           <div className="p-2 border-b border-border-subtle/50">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-theme-muted" />
               <input
                 autoFocus
                 value={search}
@@ -81,7 +81,7 @@ export function SkillSelector({ value, onChange }: SkillSelectorProps) {
           </div>
           <div className="overflow-y-auto flex-1">
             {filtered.length === 0 ? (
-              <div className="text-xs text-slate-500 p-4 text-center">No skills found</div>
+              <div className="text-xs text-theme-muted p-4 text-center">No skills found</div>
             ) : (
               filtered.map((skill) => (
                 <button
@@ -93,13 +93,13 @@ export function SkillSelector({ value, onChange }: SkillSelectorProps) {
                   }}
                   className={`w-full text-left px-3 py-2.5 text-sm transition-all duration-100 border-l-2 ${
                     skill.id === value
-                      ? 'bg-accent-subtle border-l-accent text-slate-200'
+                      ? 'bg-accent-subtle border-l-accent text-theme-primary'
                       : 'border-l-transparent hover:bg-surface-raised/60 hover:border-l-accent/40'
                   }`}
                 >
                   <div className="text-accent text-xs font-medium">{skill.id}</div>
                   {skill.description && (
-                    <div className="text-slate-500 text-xs truncate mt-0.5">{skill.description}</div>
+                    <div className="text-theme-muted text-xs truncate mt-0.5">{skill.description}</div>
                   )}
                 </button>
               ))

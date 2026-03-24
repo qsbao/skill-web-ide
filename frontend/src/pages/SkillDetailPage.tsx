@@ -44,7 +44,7 @@ export function SkillDetailPage() {
     return (
       <div className="h-full bg-surface-base flex flex-col items-center justify-center animate-fade-in">
         <Loader2 className="w-8 h-8 text-accent animate-spin mb-3" />
-        <span className="text-slate-500 text-sm">Loading skill...</span>
+        <span className="text-theme-muted text-sm">Loading skill...</span>
       </div>
     );
   }

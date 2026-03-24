@@ -51,8 +51,8 @@ export function IDELayout() {
                   onClick={() => setBottomTab(tab.id)}
                   className={`px-4 py-2 text-xs font-medium transition-colors relative ${
                     bottomTab === tab.id
-                      ? 'text-slate-100 bg-surface-base/50'
-                      : 'text-slate-500 hover:text-slate-300'
+                      ? 'text-theme-primary bg-surface-base/50'
+                      : 'text-theme-muted hover:text-theme-primary'
                   }`}
                 >
                   {tab.label}

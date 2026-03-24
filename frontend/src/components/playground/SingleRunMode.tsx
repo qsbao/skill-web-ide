@@ -21,9 +21,9 @@ function FileTree({ files, skillId, runId, depth = 0 }: { files: SkillFile[]; sk
             {file.type === 'dir' ? (
               <Folder className="w-3.5 h-3.5 text-accent/70 shrink-0" />
             ) : (
-              <FileText className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <FileText className="w-3.5 h-3.5 text-theme-muted shrink-0" />
             )}
-            <span className="text-xs text-slate-300 flex-1 truncate">{file.name}</span>
+            <span className="text-xs text-theme-primary flex-1 truncate">{file.name}</span>
             {file.type === 'file' && (
               <a
                 href={api.getRunDownloadUrl(skillId, runId, file.path)}
@@ -89,9 +89,9 @@ export function SingleRunMode() {
     return (
       <div className="h-full flex flex-col items-center justify-center bg-surface-base animate-fade-in">
         <div className="w-12 h-12 rounded-xl bg-surface-overlay/60 border border-border-subtle/50 flex items-center justify-center mb-4">
-          <Terminal className="w-6 h-6 text-slate-500" />
+          <Terminal className="w-6 h-6 text-theme-muted" />
         </div>
-        <span className="text-slate-500 text-sm">Select a skill to get started</span>
+        <span className="text-theme-muted text-sm">Select a skill to get started</span>
       </div>
     );
   }
@@ -101,7 +101,7 @@ export function SingleRunMode() {
       {/* Prompt area */}
       <div className="p-4 border-b border-border/40 bg-surface-raised">
         <div className="flex items-center gap-2.5 mb-3">
-          <span className="text-sm font-semibold text-slate-200">Single Run</span>
+          <span className="text-sm font-semibold text-theme-primary">Single Run</span>
           {singleRunning && (
             <span className="inline-flex items-center gap-1.5 text-xs text-yellow-400">
               <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse-soft" />
@@ -156,7 +156,7 @@ export function SingleRunMode() {
       <div className="flex-1 flex overflow-hidden">
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs bg-surface-inset">
           {singleOutput.length === 0 ? (
-            <div className="flex items-center gap-2 text-slate-500">
+            <div className="flex items-center gap-2 text-theme-muted">
               <Terminal className="w-4 h-4" />
               <span>No output yet. Enter a prompt and click Run.</span>
             </div>
@@ -165,7 +165,7 @@ export function SingleRunMode() {
               <pre
                 key={i}
                 className={`whitespace-pre-wrap break-all ${
-                  line.stream === 'stderr' ? 'text-red-400' : 'text-slate-300'
+                  line.stream === 'stderr' ? 'text-red-400' : 'text-theme-primary'
                 }`}
               >
                 {colorize(line.data)}
@@ -176,7 +176,7 @@ export function SingleRunMode() {
 
         {!singleRunning && singleOutputFiles.length > 0 && (
           <div className="w-64 border-l border-border/40 overflow-y-auto p-3 bg-surface-raised animate-slide-up">
-            <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Output Files</div>
+            <div className="text-xs font-semibold text-theme-secondary uppercase tracking-wider mb-2">Output Files</div>
             <FileTree files={singleOutputFiles} skillId={selectedSkillId} runId={singleActiveRunId!} />
           </div>
         )}

@@ -11,9 +11,9 @@ export function ThemeToggle() {
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
       {theme === 'dark' ? (
-        <Sun size={16} className="text-slate-400 hover:text-amber-400 transition-colors" />
+        <Sun size={16} className="text-theme-secondary hover:text-amber-400 transition-colors" />
       ) : (
-        <Moon size={16} className="text-slate-500 hover:text-indigo-500 transition-colors" />
+        <Moon size={16} className="text-theme-muted hover:text-blue-600 transition-colors" />
       )}
     </button>
   );

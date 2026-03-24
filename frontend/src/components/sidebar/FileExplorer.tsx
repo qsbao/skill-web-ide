@@ -34,7 +34,7 @@ function getFileIcon(name: string) {
     case 'json':
       return <FileJson className="w-4 h-4 text-amber-400/70 shrink-0" />;
     default:
-      return <FileText className="w-4 h-4 text-slate-500 shrink-0" />;
+      return <FileText className="w-4 h-4 text-theme-muted shrink-0" />;
   }
 }
 
@@ -69,9 +69,9 @@ function FileNode({
         onContextMenu={(e) => onContext(e, node)}
         className={`group flex items-center gap-1.5 px-2 py-1 text-[13px] cursor-pointer rounded-md mx-1 transition-colors relative ${
           isActive
-            ? 'bg-surface-overlay/60 text-slate-200'
-            : 'hover:bg-surface-overlay/50 text-slate-400 hover:text-slate-300'
-        } ${node.type === 'dir' ? 'text-slate-300 font-medium' : ''}`}
+            ? 'bg-surface-overlay/60 text-theme-primary'
+            : 'hover:bg-surface-overlay/50 text-theme-secondary hover:text-theme-primary'
+        } ${node.type === 'dir' ? 'text-theme-primary font-medium' : ''}`}
       >
         {isActive && (
           <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-accent" />
@@ -79,9 +79,9 @@ function FileNode({
         {node.type === 'dir' ? (
           <>
             {expanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <ChevronDown className="w-3.5 h-3.5 text-theme-muted shrink-0" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-theme-muted shrink-0" />
             )}
             {expanded ? (
               <FolderOpen className="w-4 h-4 text-accent/70 shrink-0" />
@@ -162,7 +162,7 @@ export function FileExplorer() {
   if (!activeSkillId) {
     return (
       <div className="h-full bg-surface-raised flex items-center justify-center">
-        <span className="text-xs text-slate-500">No skill selected</span>
+        <span className="text-xs text-theme-muted">No skill selected</span>
       </div>
     );
   }
@@ -170,11 +170,11 @@ export function FileExplorer() {
   return (
     <div className="h-full bg-surface-raised overflow-y-auto flex flex-col">
       <div className="flex-1 overflow-y-auto py-2" onContextMenu={handleRootContext}>
-        <div className="text-[11px] uppercase tracking-widest text-slate-500 font-medium px-3 py-1.5">
+        <div className="text-[11px] uppercase tracking-widest text-theme-muted font-medium px-3 py-1.5">
           Files
         </div>
         {loading ? (
-          <div className="text-xs text-slate-500 px-3 animate-pulse-soft">Loading...</div>
+          <div className="text-xs text-theme-muted px-3 animate-pulse-soft">Loading...</div>
         ) : (
           tree.map((node) => (
             <FileNode key={node.path} node={node} skillId={activeSkillId} onContext={handleContext} />
@@ -185,8 +185,8 @@ export function FileExplorer() {
       {/* Create input */}
       {creating && (
         <div className="p-2.5 border-t border-border-subtle">
-          <div className="text-[11px] text-slate-500 mb-1.5">
-            New {creating.isDir ? 'folder' : 'file'} in <span className="font-mono text-slate-400">{creating.parentPath}</span>
+          <div className="text-[11px] text-theme-muted mb-1.5">
+            New {creating.isDir ? 'folder' : 'file'} in <span className="font-mono text-theme-secondary">{creating.parentPath}</span>
           </div>
           <div className="flex gap-1.5">
             <input
@@ -214,16 +214,16 @@ export function FileExplorer() {
         >
           <button
             onClick={() => handleNewFile(false)}
-            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-surface-raised/80 hover:text-slate-100 transition-colors"
+            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-theme-primary hover:bg-surface-raised/80 hover:text-theme-primary transition-colors"
           >
-            <FilePlus className="w-3.5 h-3.5 text-slate-500" />
+            <FilePlus className="w-3.5 h-3.5 text-theme-muted" />
             New File
           </button>
           <button
             onClick={() => handleNewFile(true)}
-            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-surface-raised/80 hover:text-slate-100 transition-colors"
+            className="flex items-center gap-2 w-full text-left px-3 py-1.5 text-xs text-theme-primary hover:bg-surface-raised/80 hover:text-theme-primary transition-colors"
           >
-            <FolderPlus className="w-3.5 h-3.5 text-slate-500" />
+            <FolderPlus className="w-3.5 h-3.5 text-theme-muted" />
             New Folder
           </button>
           {ctx.node && (

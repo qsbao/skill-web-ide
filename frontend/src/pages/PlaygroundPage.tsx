@@ -66,7 +66,7 @@ export function PlaygroundPage() {
                 className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-md transition-all duration-150 font-medium ${
                   isActive
                     ? 'bg-accent-muted text-white shadow-glow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-surface-overlay/50'
+                    : 'text-theme-secondary hover:text-theme-primary hover:bg-surface-overlay/50'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />

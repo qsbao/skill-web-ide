@@ -44,10 +44,10 @@ export function UploadSkillModal({ onClose, onUploaded }: UploadSkillModalProps)
           boxShadow: '0 24px 64px -12px rgba(0, 0, 0, 0.5), 0 0 1px rgba(129, 140, 248, 0.1)',
         }}
       >
-        <h2 className="text-lg font-semibold text-slate-200 mb-4">Upload Skill</h2>
+        <h2 className="text-lg font-semibold text-theme-primary mb-4">Upload Skill</h2>
 
         <div className="mb-4">
-          <label className="block text-sm text-slate-400 mb-2">
+          <label className="block text-sm text-theme-secondary mb-2">
             Skill archive (.zip or .tar.gz)
           </label>
           <div
@@ -64,8 +64,8 @@ export function UploadSkillModal({ onClose, onUploaded }: UploadSkillModalProps)
               if (!fileName) e.currentTarget.style.borderColor = 'rgb(var(--border-default) / 0.5)';
             }}
           >
-            <UploadCloud className="w-8 h-8 text-slate-500" style={fileName ? { color: 'var(--accent)' } : {}} />
-            <span className="text-sm text-slate-400">
+            <UploadCloud className="w-8 h-8 text-theme-muted" style={fileName ? { color: 'var(--accent)' } : {}} />
+            <span className="text-sm text-theme-secondary">
               {fileName || 'Click to choose a file'}
             </span>
           </div>

@@ -22,12 +22,12 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
         className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed ${
           isUser
             ? 'rounded-2xl rounded-br-sm text-white'
-            : 'rounded-2xl rounded-bl-sm bg-surface-overlay border border-border-subtle/50 text-slate-200'
+            : 'rounded-2xl rounded-bl-sm bg-surface-overlay border border-border-subtle/50 text-theme-primary'
         }`}
         style={
           isUser
             ? {
-                background: 'linear-gradient(135deg, var(--accent-muted), #7c3aed)',
+                background: 'linear-gradient(135deg, var(--accent-muted), #1d4ed8)',
               }
             : undefined
         }

@@ -21,7 +21,7 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
     >
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">{skill.name}</h1>
+          <h1 className="text-2xl font-bold text-theme-primary">{skill.name}</h1>
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-sm font-medium text-accent">@{skill.author}</span>
             <span className="badge font-mono">v{skill.version}</span>
@@ -54,7 +54,7 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
       </div>
 
       {skill.description && (
-        <p className="text-slate-400 mb-4 leading-relaxed">{skill.description}</p>
+        <p className="text-theme-secondary mb-4 leading-relaxed">{skill.description}</p>
       )}
 
       {skill.tags.length > 0 && (
@@ -74,9 +74,9 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
       {Object.keys(frontmatter).length > 0 && (
         <div className="flex flex-wrap gap-4 mt-3 text-sm">
           {Object.entries(frontmatter).map(([key, value]) => (
-            <div key={key} className="text-slate-400">
-              <span className="text-slate-500">{key}:</span>{' '}
-              <span className="text-slate-300">
+            <div key={key} className="text-theme-secondary">
+              <span className="text-theme-muted">{key}:</span>{' '}
+              <span className="text-theme-primary">
                 {Array.isArray(value) ? value.join(', ') : String(value)}
               </span>
             </div>
@@ -84,7 +84,7 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
         </div>
       )}
 
-      <div className="flex gap-5 mt-4 text-xs text-slate-500">
+      <div className="flex gap-5 mt-4 text-xs text-theme-muted">
         <span className="inline-flex items-center gap-1.5">
           <Calendar className="w-3 h-3" />
           Created {new Date(skill.createdAt).toLocaleDateString()}
