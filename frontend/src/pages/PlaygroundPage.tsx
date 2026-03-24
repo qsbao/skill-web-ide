@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Zap } from 'lucide-react';
+import { ArrowLeft, ExternalLink, MessageSquare, Zap } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { usePlaygroundStore, type PlaygroundMode } from '../stores/playgroundStore';
 import { SkillSelector } from '../components/playground/SkillSelector';
@@ -53,6 +53,20 @@ export function PlaygroundPage() {
         <ThemeToggle />
 
         <SkillSelector value={selectedSkillId} onChange={handleSkillChange} />
+
+        {selectedSkillId && (
+          <button
+            onClick={() => {
+              const slug = selectedSkillId.startsWith('@') ? selectedSkillId.slice(1) : selectedSkillId;
+              navigate(`/skills/${slug}`);
+            }}
+            className="btn-ghost text-xs gap-1"
+            title="View skill details"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Details
+          </button>
+        )}
 
         {/* Mode pill toggle */}
         <div className="flex ml-auto bg-surface-inset rounded-lg p-0.5 border border-border-subtle/50">
