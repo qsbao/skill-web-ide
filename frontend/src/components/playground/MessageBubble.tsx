@@ -1,4 +1,6 @@
 import { User, Bot } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { ChatMessage } from '../../stores/playgroundStore';
 
 interface MessageBubbleProps {
@@ -32,15 +34,25 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
             : undefined
         }
       >
-        <pre className="whitespace-pre-wrap break-words font-sans">
-          {message.content || (isStreaming ? '' : '...')}
-          {isStreaming && (
-            <span
-              className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom rounded-sm animate-pulse-soft"
-              style={{ background: 'var(--accent)' }}
-            />
-          )}
-        </pre>
+        {isUser ? (
+          <pre className="whitespace-pre-wrap break-words font-sans">
+            {message.content}
+          </pre>
+        ) : (
+          <div className="prose-chat break-words">
+            {message.content ? (
+              <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+            ) : (
+              !isStreaming && <span>...</span>
+            )}
+            {isStreaming && (
+              <span
+                className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom rounded-sm animate-pulse-soft"
+                style={{ background: 'var(--accent)' }}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* User avatar */}

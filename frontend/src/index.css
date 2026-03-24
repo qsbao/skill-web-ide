@@ -216,4 +216,55 @@
   .text-theme-muted { color: var(--text-muted); }
   .text-theme-accent { color: var(--accent); }
   .hover\:text-theme-primary:hover { color: var(--text-primary); }
+
+  /* Markdown prose for chat bubbles */
+  .prose-chat {
+    @apply text-sm leading-relaxed;
+    font-family: inherit;
+  }
+  .prose-chat p { @apply my-1.5 first:mt-0 last:mb-0; }
+  .prose-chat h1, .prose-chat h2, .prose-chat h3 {
+    @apply font-semibold mt-3 mb-1.5 first:mt-0;
+  }
+  .prose-chat h1 { @apply text-base; }
+  .prose-chat h2 { @apply text-sm; }
+  .prose-chat h3 { @apply text-sm; }
+  .prose-chat ul, .prose-chat ol { @apply my-1.5 pl-5; }
+  .prose-chat ul { @apply list-disc; }
+  .prose-chat ol { @apply list-decimal; }
+  .prose-chat li { @apply my-0.5; }
+  .prose-chat li > p { @apply my-0; }
+  .prose-chat code {
+    @apply text-xs px-1.5 py-0.5 rounded-md font-mono;
+    background: rgb(var(--surface-inset));
+    border: 1px solid rgb(var(--border-subtle) / 0.5);
+  }
+  .prose-chat pre {
+    @apply my-2 p-3 rounded-lg overflow-x-auto text-xs;
+    background: rgb(var(--surface-inset));
+    border: 1px solid rgb(var(--border-subtle) / 0.5);
+  }
+  .prose-chat pre code {
+    @apply p-0 border-0 bg-transparent;
+  }
+  .prose-chat blockquote {
+    @apply my-2 pl-3 italic;
+    border-left: 2px solid var(--accent-muted);
+    color: var(--text-secondary);
+  }
+  .prose-chat a {
+    color: var(--accent);
+    @apply underline underline-offset-2;
+  }
+  .prose-chat a:hover { color: var(--accent-hover); }
+  .prose-chat hr { @apply my-3 border-0; border-top: 1px solid rgb(var(--border-subtle)); }
+  .prose-chat table { @apply my-2 w-full text-xs; border-collapse: collapse; }
+  .prose-chat th, .prose-chat td {
+    @apply px-2 py-1 text-left;
+    border: 1px solid rgb(var(--border-subtle) / 0.5);
+  }
+  .prose-chat th {
+    @apply font-semibold;
+    background: rgb(var(--surface-overlay) / 0.5);
+  }
 }

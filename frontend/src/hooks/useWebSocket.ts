@@ -67,13 +67,16 @@ export function useWebSocket() {
           case 'playground:chat:status':
             if (msg.payload.status !== 'running') {
               setChatRunning(false);
+              if (msg.payload.status === 'failed' || msg.payload.status === 'error') {
+                appendToLastAssistant('[Error: chat request failed]');
+              }
             }
             break;
           case 'playground:chat:session':
             setSessionId(msg.payload.sessionId);
             break;
           case 'playground:chat:started':
-            setChatRunning(true);
+            // chatRunning is already set to true in handleSend; no-op here
             break;
           // Playground single-run messages
           case 'playground:single:output':
@@ -88,6 +91,11 @@ export function useWebSocket() {
           case 'playground:single:started':
             setSingleRunning(true);
             setSingleActiveRunId(msg.payload.id);
+            break;
+          case 'error':
+            // Reset running states on error so UI isn't stuck
+            setChatRunning(false);
+            setSingleRunning(false);
             break;
         }
       };

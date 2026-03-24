@@ -12,6 +12,7 @@ export function ChatMode() {
     chatRunning,
     addUserMessage,
     addAssistantMessage,
+    setChatRunning,
     clearChat,
   } = usePlaygroundStore();
   const { sendMessage } = useWebSocket();
@@ -29,13 +30,14 @@ export function ChatMode() {
     const text = input.trim();
     addUserMessage(text);
     addAssistantMessage('');
+    setChatRunning(true);
     setInput('');
     sendMessage('playground:chat', {
       skillId: selectedSkillId,
       prompt: text,
       sessionId: sessionId || undefined,
     });
-  }, [selectedSkillId, chatRunning, input, sessionId, addUserMessage, addAssistantMessage, sendMessage]);
+  }, [selectedSkillId, chatRunning, input, sessionId, addUserMessage, addAssistantMessage, setChatRunning, sendMessage]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

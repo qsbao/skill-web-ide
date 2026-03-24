@@ -8,6 +8,8 @@ import type { SkillRun, RunStatus, SkillFile } from '@skill-ide/shared';
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 const activeProcesses = new Map<string, ChildProcess>();
 const runs = new Map<string, SkillRun>();
+// Map Claude session ID → work directory for proper resume
+const sessionWorkDirs = new Map<string, string>();
 
 export type OutputCallback = (stream: 'stdout' | 'stderr', data: string) => void;
 export type StatusCallback = (status: RunStatus) => void;
@@ -188,8 +190,8 @@ export async function runPlaygroundChat(
 
   const skillDir = getSkillDir(skillId);
 
-  // Reuse the same workdir for resumed sessions, or create new
-  const workDir = resumeSessionId ? getRunDir(resumeSessionId) : getRunDir(id);
+  // Reuse the original workdir for resumed sessions
+  const workDir = (resumeSessionId && sessionWorkDirs.get(resumeSessionId)) || getRunDir(id);
   await fs.mkdir(workDir, { recursive: true });
 
   // Symlink skill if not already present
@@ -241,6 +243,7 @@ export async function runPlaygroundChat(
         // Extract session ID from init event
         if (!sessionFound && event.type === 'system' && event.session_id) {
           sessionFound = true;
+          sessionWorkDirs.set(event.session_id, workDir);
           onSessionId(event.session_id);
         }
         // Stream text deltas from partial messages
@@ -253,6 +256,7 @@ export async function runPlaygroundChat(
         // Capture session_id from result if missed
         if (event.type === 'result' && !sessionFound && event.session_id) {
           sessionFound = true;
+          sessionWorkDirs.set(event.session_id, workDir);
           onSessionId(event.session_id);
         }
       } catch {
@@ -261,8 +265,9 @@ export async function runPlaygroundChat(
     }
   });
 
-  child.stderr?.on('data', () => {
-    // Ignore stderr for chat mode (verbose debug output)
+  let stderrBuffer = '';
+  child.stderr?.on('data', (data: Buffer) => {
+    stderrBuffer += data.toString();
   });
 
   const timeout = setTimeout(() => {
@@ -281,6 +286,9 @@ export async function runPlaygroundChat(
     run.status = code === 0 ? 'completed' : 'failed';
     run.finishedAt = new Date().toISOString();
     runs.set(id, run);
+    if (run.status === 'failed' && stderrBuffer.trim()) {
+      onText(`\n[stderr]: ${stderrBuffer.trim()}`);
+    }
     onStatus(run.status);
   });
 
