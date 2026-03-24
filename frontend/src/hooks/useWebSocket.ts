@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '../stores/testStore';
 import { useRunStore } from '../stores/runStore';
+import { usePlaygroundStore } from '../stores/playgroundStore';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -11,6 +12,15 @@ export function useWebSocket() {
     setLastStatus: setRunLastStatus,
     setActiveRunId,
   } = useRunStore();
+  const {
+    appendToLastAssistant,
+    setChatRunning,
+    setSessionId,
+    addSingleOutput,
+    setSingleRunning,
+    setSingleLastStatus,
+    setSingleActiveRunId,
+  } = usePlaygroundStore();
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -50,6 +60,35 @@ export function useWebSocket() {
             setRunRunning(true);
             setActiveRunId(msg.payload.id);
             break;
+          // Playground chat messages
+          case 'playground:chat:text':
+            appendToLastAssistant(msg.payload.text);
+            break;
+          case 'playground:chat:status':
+            if (msg.payload.status !== 'running') {
+              setChatRunning(false);
+            }
+            break;
+          case 'playground:chat:session':
+            setSessionId(msg.payload.sessionId);
+            break;
+          case 'playground:chat:started':
+            setChatRunning(true);
+            break;
+          // Playground single-run messages
+          case 'playground:single:output':
+            addSingleOutput({ stream: msg.payload.stream, data: msg.payload.data });
+            break;
+          case 'playground:single:status':
+            setSingleLastStatus(msg.payload.status);
+            if (msg.payload.status !== 'running') {
+              setSingleRunning(false);
+            }
+            break;
+          case 'playground:single:started':
+            setSingleRunning(true);
+            setSingleActiveRunId(msg.payload.id);
+            break;
         }
       };
 
@@ -63,7 +102,12 @@ export function useWebSocket() {
     return () => {
       wsRef.current?.close();
     };
-  }, [addOutput, setRunning, setLastStatus, addRunOutput, setRunRunning, setRunLastStatus, setActiveRunId]);
+  }, [
+    addOutput, setRunning, setLastStatus,
+    addRunOutput, setRunRunning, setRunLastStatus, setActiveRunId,
+    appendToLastAssistant, setChatRunning, setSessionId,
+    addSingleOutput, setSingleRunning, setSingleLastStatus, setSingleActiveRunId,
+  ]);
 
   const sendMessage = useCallback((action: string, payload: unknown) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

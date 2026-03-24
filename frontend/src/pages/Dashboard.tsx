@@ -48,7 +48,15 @@ export function Dashboard() {
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-semibold text-white">Skill Library</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-semibold text-white">Skill Library</h1>
+            <button
+              onClick={() => navigate('/playground')}
+              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Playground
+            </button>
+          </div>
           {creating ? (
             <div className="flex items-center gap-2">
               <input

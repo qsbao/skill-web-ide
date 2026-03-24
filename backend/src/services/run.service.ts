@@ -159,6 +159,134 @@ export function getRunFilePath(runId: string, filePath: string): string {
   return absPath;
 }
 
+export type ChatOutputCallback = (text: string) => void;
+export type ChatSessionCallback = (sessionId: string) => void;
+
+/**
+ * Run a playground chat turn. Uses --output-format stream-json to parse session ID.
+ * If resumeSessionId is provided, uses --resume to continue the conversation.
+ */
+export async function runPlaygroundChat(
+  skillId: string,
+  prompt: string,
+  onText: ChatOutputCallback,
+  onStatus: StatusCallback,
+  onSessionId: ChatSessionCallback,
+  resumeSessionId?: string,
+  runId?: string,
+): Promise<SkillRun> {
+  const id = runId || uuid();
+  const run: SkillRun = {
+    id,
+    skillId,
+    prompt,
+    status: 'running',
+    startedAt: new Date().toISOString(),
+  };
+  runs.set(id, run);
+  onStatus('running');
+
+  const skillDir = getSkillDir(skillId);
+
+  // Reuse the same workdir for resumed sessions, or create new
+  const workDir = resumeSessionId ? getRunDir(resumeSessionId) : getRunDir(id);
+  await fs.mkdir(workDir, { recursive: true });
+
+  // Symlink skill if not already present
+  const skillsLinkDir = path.join(workDir, '.claude', 'skills');
+  await fs.mkdir(skillsLinkDir, { recursive: true });
+  const skillName = skillId.replace(/^@[^/]+\//, '');
+  const symlinkTarget = path.join(skillsLinkDir, skillName);
+  try {
+    await fs.symlink(skillDir, symlinkTarget, 'dir');
+  } catch (err: any) {
+    if (err.code !== 'EEXIST') throw err;
+  }
+
+  const skillMdPath = path.join(skillDir, 'SKILL.md');
+  const args = [
+    '-p', prompt,
+    '--verbose',
+    '--output-format', 'stream-json',
+    '--include-partial-messages',
+    '--append-system-prompt-file', skillMdPath,
+    '--allowedTools', 'Write,Edit,Bash,Read,Glob,Grep',
+  ];
+
+  if (resumeSessionId) {
+    args.push('--resume', resumeSessionId);
+  }
+
+  const child = spawn('claude', args, {
+    cwd: workDir,
+    shell: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, FORCE_COLOR: '0' },
+  });
+
+  activeProcesses.set(id, child);
+
+  let buffer = '';
+  let sessionFound = false;
+
+  child.stdout?.on('data', (data: Buffer) => {
+    buffer += data.toString();
+    // Process complete JSON lines
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const event = JSON.parse(line);
+        // Extract session ID from init event
+        if (!sessionFound && event.type === 'system' && event.session_id) {
+          sessionFound = true;
+          onSessionId(event.session_id);
+        }
+        // Stream text deltas from partial messages
+        if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
+          const delta = event.event.delta;
+          if (delta?.type === 'text_delta' && delta.text) {
+            onText(delta.text);
+          }
+        }
+        // Capture session_id from result if missed
+        if (event.type === 'result' && !sessionFound && event.session_id) {
+          sessionFound = true;
+          onSessionId(event.session_id);
+        }
+      } catch {
+        // Not valid JSON, skip
+      }
+    }
+  });
+
+  child.stderr?.on('data', () => {
+    // Ignore stderr for chat mode (verbose debug output)
+  });
+
+  const timeout = setTimeout(() => {
+    child.kill('SIGTERM');
+    run.status = 'error';
+    run.finishedAt = new Date().toISOString();
+    onStatus('error');
+    activeProcesses.delete(id);
+  }, TIMEOUT_MS);
+
+  child.on('close', (code) => {
+    clearTimeout(timeout);
+    activeProcesses.delete(id);
+    if (run.status === 'error') return;
+
+    run.status = code === 0 ? 'completed' : 'failed';
+    run.finishedAt = new Date().toISOString();
+    runs.set(id, run);
+    onStatus(run.status);
+  });
+
+  return run;
+}
+
 export function cancelRun(runId: string): boolean {
   const child = activeProcesses.get(runId);
   if (child) {

@@ -64,6 +64,76 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
           });
         }
+        if (msg.action === 'playground:chat') {
+          const { skillId, prompt, sessionId } = msg.payload as {
+            skillId: string;
+            prompt: string;
+            sessionId?: string;
+          };
+          const runId = uuid();
+
+          runService.runPlaygroundChat(
+            skillId,
+            prompt,
+            (text) => {
+              socket.send(JSON.stringify({
+                type: 'playground:chat:text',
+                payload: { runId, text },
+              }));
+            },
+            (status) => {
+              socket.send(JSON.stringify({
+                type: 'playground:chat:status',
+                payload: { runId, status },
+              }));
+            },
+            (newSessionId) => {
+              socket.send(JSON.stringify({
+                type: 'playground:chat:session',
+                payload: { runId, sessionId: newSessionId },
+              }));
+            },
+            sessionId,
+            runId,
+          ).then((run) => {
+            socket.send(JSON.stringify({
+              type: 'playground:chat:started',
+              payload: run,
+            }));
+          }).catch((err) => {
+            socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
+          });
+        }
+
+        if (msg.action === 'playground:single') {
+          const { skillId, prompt } = msg.payload as { skillId: string; prompt: string };
+          const runId = uuid();
+
+          runService.runSkill(
+            skillId,
+            prompt,
+            (stream, data) => {
+              socket.send(JSON.stringify({
+                type: 'playground:single:output',
+                payload: { runId, stream, data },
+              }));
+            },
+            (status) => {
+              socket.send(JSON.stringify({
+                type: 'playground:single:status',
+                payload: { runId, status },
+              }));
+            },
+            runId,
+          ).then((run) => {
+            socket.send(JSON.stringify({
+              type: 'playground:single:started',
+              payload: run,
+            }));
+          }).catch((err) => {
+            socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
+          });
+        }
       } catch {
         socket.send(JSON.stringify({ type: 'error', payload: 'Invalid message' }));
       }

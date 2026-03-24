@@ -5,7 +5,14 @@ export type WsMessageType =
   | 'file:changed'
   | 'run:output'
   | 'run:status'
-  | 'run:started';
+  | 'run:started'
+  | 'playground:chat:text'
+  | 'playground:chat:status'
+  | 'playground:chat:session'
+  | 'playground:chat:started'
+  | 'playground:single:output'
+  | 'playground:single:status'
+  | 'playground:single:started';
 
 export interface WsMessage {
   type: WsMessageType;

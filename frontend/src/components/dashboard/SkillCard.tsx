@@ -53,6 +53,15 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              navigate(`/playground/${idWithoutAt}`);
+            }}
+            className="text-xs bg-gray-700 text-green-400 px-2 py-1 rounded hover:bg-gray-600"
+          >
+            Try
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               navigate(`/ide/${idWithoutAt}`);
             }}
             className="text-xs bg-gray-700 text-blue-400 px-2 py-1 rounded hover:bg-gray-600"

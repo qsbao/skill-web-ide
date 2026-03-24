@@ -1,0 +1,90 @@
+import { create } from 'zustand';
+import type { SkillFile } from '@skill-ide/shared';
+
+export type PlaygroundMode = 'chat' | 'single';
+
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+interface OutputLine {
+  stream: 'stdout' | 'stderr';
+  data: string;
+}
+
+interface PlaygroundState {
+  mode: PlaygroundMode;
+  selectedSkillId: string | null;
+  // Chat mode
+  messages: ChatMessage[];
+  sessionId: string | null;
+  chatRunning: boolean;
+  // Single-run mode
+  singleOutput: OutputLine[];
+  singleRunning: boolean;
+  singleLastStatus: string | null;
+  singleActiveRunId: string | null;
+  singleOutputFiles: SkillFile[];
+  // Actions
+  setMode: (mode: PlaygroundMode) => void;
+  setSelectedSkillId: (id: string | null) => void;
+  // Chat actions
+  addUserMessage: (content: string) => void;
+  addAssistantMessage: (content: string) => void;
+  appendToLastAssistant: (content: string) => void;
+  setSessionId: (id: string | null) => void;
+  setChatRunning: (running: boolean) => void;
+  clearChat: () => void;
+  // Single-run actions
+  addSingleOutput: (line: OutputLine) => void;
+  clearSingleOutput: () => void;
+  setSingleRunning: (running: boolean) => void;
+  setSingleLastStatus: (status: string | null) => void;
+  setSingleActiveRunId: (id: string | null) => void;
+  setSingleOutputFiles: (files: SkillFile[]) => void;
+}
+
+export const usePlaygroundStore = create<PlaygroundState>((set) => ({
+  mode: 'chat',
+  selectedSkillId: null,
+  // Chat
+  messages: [],
+  sessionId: null,
+  chatRunning: false,
+  // Single-run
+  singleOutput: [],
+  singleRunning: false,
+  singleLastStatus: null,
+  singleActiveRunId: null,
+  singleOutputFiles: [],
+  // Actions
+  setMode: (mode) => set({ mode }),
+  setSelectedSkillId: (id) => set({ selectedSkillId: id }),
+  // Chat actions
+  addUserMessage: (content) =>
+    set((state) => ({ messages: [...state.messages, { role: 'user', content }] })),
+  addAssistantMessage: (content) =>
+    set((state) => ({ messages: [...state.messages, { role: 'assistant', content }] })),
+  appendToLastAssistant: (content) =>
+    set((state) => {
+      const msgs = [...state.messages];
+      const last = msgs[msgs.length - 1];
+      if (last?.role === 'assistant') {
+        msgs[msgs.length - 1] = { ...last, content: last.content + content };
+      }
+      return { messages: msgs };
+    }),
+  setSessionId: (id) => set({ sessionId: id }),
+  setChatRunning: (running) => set({ chatRunning: running }),
+  clearChat: () => set({ messages: [], sessionId: null, chatRunning: false }),
+  // Single-run actions
+  addSingleOutput: (line) =>
+    set((state) => ({ singleOutput: [...state.singleOutput, line] })),
+  clearSingleOutput: () =>
+    set({ singleOutput: [], singleOutputFiles: [], singleLastStatus: null }),
+  setSingleRunning: (running) => set({ singleRunning: running }),
+  setSingleLastStatus: (status) => set({ singleLastStatus: status }),
+  setSingleActiveRunId: (id) => set({ singleActiveRunId: id }),
+  setSingleOutputFiles: (files) => set({ singleOutputFiles: files }),
+}));

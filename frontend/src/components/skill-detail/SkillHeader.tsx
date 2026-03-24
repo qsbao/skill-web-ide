@@ -22,6 +22,12 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => navigate(`/playground/${idWithoutAt}`)}
+            className="text-sm bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Try in Playground
+          </button>
+          <button
             onClick={() => navigate(`/ide/${idWithoutAt}`)}
             className="text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
           >
