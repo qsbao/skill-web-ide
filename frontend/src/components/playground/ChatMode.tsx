@@ -9,6 +9,7 @@ export function ChatMode() {
     selectedSkillId,
     messages,
     sessionId,
+    internalSessionId,
     chatRunning,
     addUserMessage,
     addAssistantMessage,
@@ -36,8 +37,9 @@ export function ChatMode() {
       skillId: selectedSkillId,
       prompt: text,
       sessionId: sessionId || undefined,
+      internalSessionId: internalSessionId || undefined,
     });
-  }, [selectedSkillId, chatRunning, input, sessionId, addUserMessage, addAssistantMessage, setChatRunning, sendMessage]);
+  }, [selectedSkillId, chatRunning, input, sessionId, internalSessionId, addUserMessage, addAssistantMessage, setChatRunning, sendMessage]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

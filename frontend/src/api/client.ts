@@ -106,4 +106,14 @@ export const api = {
     `${BASE}${skillPath(skillId)}/runs/${runId}/download/${path}`,
   cancelRun: (skillId: string, runId: string) =>
     request<{ ok: boolean }>(`${skillPath(skillId)}/runs/${runId}/cancel`, { method: 'POST' }),
+
+  // Sessions
+  listSessions: (params?: { skillId?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.skillId) qs.set('skillId', params.skillId);
+    const q = qs.toString();
+    return request<any[]>(`/sessions${q ? `?${q}` : ''}`);
+  },
+  getSession: (sessionId: string) => request<any>(`/sessions/${sessionId}`),
+  deleteSession: (sessionId: string) => request<void>(`/sessions/${sessionId}`, { method: 'DELETE' }),
 };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useTestStore } from '../stores/testStore';
 import { useRunStore } from '../stores/runStore';
 import { usePlaygroundStore } from '../stores/playgroundStore';
+import { useSessionStore } from '../stores/sessionStore';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -16,11 +17,13 @@ export function useWebSocket() {
     appendToLastAssistant,
     setChatRunning,
     setSessionId,
+    setInternalSessionId,
     addSingleOutput,
     setSingleRunning,
     setSingleLastStatus,
     setSingleActiveRunId,
   } = usePlaygroundStore();
+  const { loadSessions } = useSessionStore();
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -70,7 +73,12 @@ export function useWebSocket() {
               if (msg.payload.status === 'failed' || msg.payload.status === 'error') {
                 appendToLastAssistant('[Error: chat request failed]');
               }
+              // Refresh sessions list after chat completes
+              loadSessions();
             }
+            break;
+          case 'playground:chat:internal-session':
+            setInternalSessionId(msg.payload.internalSessionId);
             break;
           case 'playground:chat:session':
             setSessionId(msg.payload.sessionId);
@@ -86,6 +94,8 @@ export function useWebSocket() {
             setSingleLastStatus(msg.payload.status);
             if (msg.payload.status !== 'running') {
               setSingleRunning(false);
+              // Refresh sessions list after single-run completes
+              loadSessions();
             }
             break;
           case 'playground:single:started':
@@ -113,8 +123,9 @@ export function useWebSocket() {
   }, [
     addOutput, setRunning, setLastStatus,
     addRunOutput, setRunRunning, setRunLastStatus, setActiveRunId,
-    appendToLastAssistant, setChatRunning, setSessionId,
+    appendToLastAssistant, setChatRunning, setSessionId, setInternalSessionId,
     addSingleOutput, setSingleRunning, setSingleLastStatus, setSingleActiveRunId,
+    loadSessions,
   ]);
 
   const sendMessage = useCallback((action: string, payload: unknown) => {

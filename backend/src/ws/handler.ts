@@ -2,6 +2,8 @@ import type { FastifyPluginAsync } from 'fastify';
 import { v4 as uuid } from 'uuid';
 import * as testRunner from '../services/test-runner.service.js';
 import * as runService from '../services/run.service.js';
+import * as sessionService from '../services/session.service.js';
+import { getSkill } from '../services/skill.service.js';
 import type { TestType, WsMessage } from '@skill-ide/shared';
 
 export const wsHandler: FastifyPluginAsync = async (app) => {
@@ -64,18 +66,51 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
           });
         }
+
         if (msg.action === 'playground:chat') {
-          const { skillId, prompt, sessionId } = msg.payload as {
+          const { skillId, prompt, sessionId, internalSessionId } = msg.payload as {
             skillId: string;
             prompt: string;
             sessionId?: string;
+            internalSessionId?: string;
           };
           const runId = uuid();
+          let assistantText = '';
+          let activeInternalSessionId = internalSessionId || null;
+
+          // Create or reuse session
+          const sessionSetup = (async () => {
+            if (activeInternalSessionId) {
+              // Existing session — add user message
+              await sessionService.addMessage(activeInternalSessionId, {
+                role: 'user',
+                content: prompt,
+                timestamp: new Date().toISOString(),
+              });
+            } else {
+              // New session
+              const skill = await getSkill(skillId);
+              const skillName = skill?.name || skillId;
+              const session = await sessionService.createSession(skillId, skillName, 'chat', prompt);
+              activeInternalSessionId = session.id;
+              await sessionService.addMessage(session.id, {
+                role: 'user',
+                content: prompt,
+                timestamp: new Date().toISOString(),
+              });
+              // Notify frontend of the internal session ID
+              socket.send(JSON.stringify({
+                type: 'playground:chat:internal-session',
+                payload: { runId, internalSessionId: session.id },
+              }));
+            }
+          })();
 
           runService.runPlaygroundChat(
             skillId,
             prompt,
             (text) => {
+              assistantText += text;
               socket.send(JSON.stringify({
                 type: 'playground:chat:text',
                 payload: { runId, text },
@@ -86,12 +121,32 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
                 type: 'playground:chat:status',
                 payload: { runId, status },
               }));
+              // Persist assistant message on completion
+              if (status !== 'running' && activeInternalSessionId) {
+                sessionSetup.then(() => {
+                  if (assistantText.trim()) {
+                    sessionService.addMessage(activeInternalSessionId!, {
+                      role: 'assistant',
+                      content: assistantText,
+                      timestamp: new Date().toISOString(),
+                    });
+                  }
+                  const sessionStatus = status === 'completed' ? 'completed' : 'failed';
+                  sessionService.updateStatus(activeInternalSessionId!, sessionStatus);
+                });
+              }
             },
             (newSessionId) => {
               socket.send(JSON.stringify({
                 type: 'playground:chat:session',
                 payload: { runId, sessionId: newSessionId },
               }));
+              // Persist Claude session ID
+              if (activeInternalSessionId) {
+                sessionSetup.then(() => {
+                  sessionService.setClaudeSessionId(activeInternalSessionId!, newSessionId);
+                });
+              }
             },
             sessionId,
             runId,
@@ -108,11 +163,27 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
         if (msg.action === 'playground:single') {
           const { skillId, prompt } = msg.payload as { skillId: string; prompt: string };
           const runId = uuid();
+          let outputText = '';
+          let internalSessionId: string | null = null;
+
+          // Create session for single-run
+          const sessionSetup = (async () => {
+            const skill = await getSkill(skillId);
+            const skillName = skill?.name || skillId;
+            const session = await sessionService.createSession(skillId, skillName, 'single-run', prompt);
+            internalSessionId = session.id;
+            await sessionService.addMessage(session.id, {
+              role: 'user',
+              content: prompt,
+              timestamp: new Date().toISOString(),
+            });
+          })();
 
           runService.runSkill(
             skillId,
             prompt,
             (stream, data) => {
+              outputText += data;
               socket.send(JSON.stringify({
                 type: 'playground:single:output',
                 payload: { runId, stream, data },
@@ -123,6 +194,21 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
                 type: 'playground:single:status',
                 payload: { runId, status },
               }));
+              // Persist output on completion
+              if (status !== 'running' && internalSessionId) {
+                sessionSetup.then(() => {
+                  if (outputText.trim()) {
+                    sessionService.addMessage(internalSessionId!, {
+                      role: 'assistant',
+                      content: outputText,
+                      timestamp: new Date().toISOString(),
+                    });
+                  }
+                  sessionService.updateOutput(internalSessionId!, outputText);
+                  const sessionStatus = status === 'completed' ? 'completed' : 'failed';
+                  sessionService.updateStatus(internalSessionId!, sessionStatus);
+                });
+              }
             },
             runId,
           ).then((run) => {

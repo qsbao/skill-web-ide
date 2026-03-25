@@ -19,6 +19,7 @@ interface PlaygroundState {
   // Chat mode
   messages: ChatMessage[];
   sessionId: string | null;
+  internalSessionId: string | null;
   chatRunning: boolean;
   // Single-run mode
   singleOutput: OutputLine[];
@@ -34,6 +35,7 @@ interface PlaygroundState {
   addAssistantMessage: (content: string) => void;
   appendToLastAssistant: (content: string) => void;
   setSessionId: (id: string | null) => void;
+  setInternalSessionId: (id: string | null) => void;
   setChatRunning: (running: boolean) => void;
   clearChat: () => void;
   // Single-run actions
@@ -51,6 +53,7 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   // Chat
   messages: [],
   sessionId: null,
+  internalSessionId: null,
   chatRunning: false,
   // Single-run
   singleOutput: [],
@@ -76,8 +79,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       return { messages: msgs };
     }),
   setSessionId: (id) => set({ sessionId: id }),
+  setInternalSessionId: (id) => set({ internalSessionId: id }),
   setChatRunning: (running) => set({ chatRunning: running }),
-  clearChat: () => set({ messages: [], sessionId: null, chatRunning: false }),
+  clearChat: () => set({ messages: [], sessionId: null, internalSessionId: null, chatRunning: false }),
   // Single-run actions
   addSingleOutput: (line) =>
     set((state) => ({ singleOutput: [...state.singleOutput, line] })),

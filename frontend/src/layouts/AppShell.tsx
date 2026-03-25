@@ -18,9 +18,11 @@ function NavTabs() {
         const Icon = item.icon;
         // Match base path: /ide, /ide/:a/:n, /playground, /playground/:a/:n, etc.
         const isActive = location.pathname === item.to || location.pathname.startsWith(item.to + '/');
-        // For dashboard, also match /skills/* since it's part of the dashboard flow
+        // For dashboard, also match /skills/* and /dashboard/* sub-routes
         const isDashActive = item.to === '/dashboard' && (
-          location.pathname === '/dashboard' || location.pathname.startsWith('/skills/')
+          location.pathname === '/dashboard' ||
+          location.pathname.startsWith('/dashboard/') ||
+          location.pathname.startsWith('/skills/')
         );
 
         const active = isActive || isDashActive;
