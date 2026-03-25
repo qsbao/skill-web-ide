@@ -5,7 +5,7 @@ import { config } from '../config.js';
 import type { SkillReadme } from '@skill-ide/shared';
 
 export async function getReadme(slug: string): Promise<SkillReadme> {
-  const filePath = path.join(config.skillsDir, slug, 'skill.md');
+  const filePath = path.join(config.skillsDir, slug, 'SKILL.md');
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(raw);

@@ -31,7 +31,7 @@ export async function importSkillFromZip(
       throw new Error('Unsupported file format. Use .zip or .tar.gz');
     }
 
-    // Find the skill root: look for skill.json or skill.md
+    // Find the skill root: look for skill.json or SKILL.md
     const root = await findSkillRoot(extractDir);
 
     // Read or generate skill.json
@@ -41,7 +41,7 @@ export async function importSkillFromZip(
       const raw = await fs.readFile(manifestPath, 'utf-8');
       meta = JSON.parse(raw);
     } catch {
-      // Try to extract metadata from skill.md frontmatter
+      // Try to extract metadata from SKILL.md frontmatter
       const fm = await readSkillMdFrontmatter(root);
       const name = fm.name || path.basename(root);
       const author = fm.author || config.defaultAuthor;
@@ -88,7 +88,7 @@ export async function importSkillFromZip(
 
 async function readSkillMdFrontmatter(dir: string): Promise<Record<string, any>> {
   try {
-    const raw = await fs.readFile(path.join(dir, 'skill.md'), 'utf-8');
+    const raw = await fs.readFile(path.join(dir, 'SKILL.md'), 'utf-8');
     const { data } = matter(raw);
     return data;
   } catch {
@@ -97,11 +97,11 @@ async function readSkillMdFrontmatter(dir: string): Promise<Record<string, any>>
 }
 
 async function findSkillRoot(dir: string): Promise<string> {
-  // Check if skill.json or skill.md exists at this level
+  // Check if skill.json or SKILL.md exists at this level
   const entries = await fs.readdir(dir, { withFileTypes: true });
 
   for (const entry of entries) {
-    if (entry.isFile() && (entry.name === 'skill.json' || entry.name === 'skill.md')) {
+    if (entry.isFile() && (entry.name === 'skill.json' || entry.name === 'SKILL.md')) {
       return dir;
     }
   }

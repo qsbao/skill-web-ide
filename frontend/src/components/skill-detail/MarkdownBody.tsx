@@ -17,7 +17,7 @@ export function MarkdownBody({ content }: MarkdownBodyProps) {
           <FileText className="w-5 h-5 text-theme-muted" />
         </div>
         <span className="text-theme-muted text-sm italic">
-          No skill.md found. Add a skill.md file to describe this skill.
+          No SKILL.md found. Add a SKILL.md file to describe this skill.
         </span>
       </div>
     );
