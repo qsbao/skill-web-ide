@@ -13,6 +13,8 @@ const sessionWorkDirs = new Map<string, string>();
 
 export type OutputCallback = (stream: 'stdout' | 'stderr', data: string) => void;
 export type StatusCallback = (status: RunStatus) => void;
+export type ChatOutputCallback = (text: string) => void;
+export type ChatSessionCallback = (sessionId: string) => void;
 
 export function getSkillRuns(skillId: string): SkillRun[] {
   return Array.from(runs.values())
@@ -28,14 +30,9 @@ function getRunDir(runId: string): string {
   return path.join(config.runsDir, runId);
 }
 
-export async function runSkill(
-  skillId: string,
-  prompt: string,
-  onOutput: OutputCallback,
-  onStatus: StatusCallback,
-  runId?: string,
-): Promise<SkillRun> {
-  const id = runId || uuid();
+// --- Shared helpers ---
+
+function createRun(id: string, skillId: string, prompt: string): SkillRun {
   const run: SkillRun = {
     id,
     skillId,
@@ -44,17 +41,21 @@ export async function runSkill(
     startedAt: new Date().toISOString(),
   };
   runs.set(id, run);
-  onStatus('running');
+  return run;
+}
 
+async function setupWorkDir(
+  skillId: string,
+  runId: string,
+  reuseDir?: string,
+): Promise<{ workDir: string; symlinkTarget: string }> {
   const skillDir = getSkillDir(skillId);
-
-  const workDir = getRunDir(id);
+  const workDir = reuseDir || getRunDir(runId);
   await fs.mkdir(workDir, { recursive: true });
 
-  // Symlink the entire skill directory into workdir/.claude/skills/
   const skillsLinkDir = path.join(workDir, '.claude', 'skills');
   await fs.mkdir(skillsLinkDir, { recursive: true });
-  const skillName = skillId.replace(/^@[^/]+\//, ''); // extract name from @author/name
+  const skillName = skillId.replace(/^@[^/]+\//, '');
   const symlinkTarget = path.join(skillsLinkDir, skillName);
   try {
     await fs.symlink(skillDir, symlinkTarget, 'junction');
@@ -62,13 +63,21 @@ export async function runSkill(
     if (err.code !== 'EEXIST') throw err;
   }
 
-  // Find SKILL.md to inject as system prompt
-  const skillMdPath = path.join(skillDir, 'SKILL.md');
-  const escapedPrompt = prompt.replace(/"/g, '\\"');
-  const cmd = `claude -p "${escapedPrompt}" --verbose --output-format stream-json --include-partial-messages --allowedTools "Write,Edit,Bash,Read,Glob,Grep"`;
-  onOutput('stderr', `[skill-run] Working directory: ${workDir}\n`);
-  onOutput('stderr', `[skill-run] Command: ${cmd}\n`);
-  onOutput('stderr', `[skill-run] Skill: ${skillId} → ${symlinkTarget}\n\n`);
+  return { workDir, symlinkTarget };
+}
+
+interface SpawnOptions {
+  cmd: string;
+  workDir: string;
+  run: SkillRun;
+  onText: (text: string) => void;
+  onError: (text: string) => void;
+  onStatus: StatusCallback;
+  onStdoutEvent?: (event: any) => void;
+}
+
+function spawnClaude(opts: SpawnOptions): ChildProcess {
+  const { cmd, workDir, run, onText, onError, onStatus, onStdoutEvent } = opts;
 
   const child = spawn(cmd, [], {
     cwd: workDir,
@@ -77,7 +86,7 @@ export async function runSkill(
     env: { ...process.env, FORCE_COLOR: '0' },
   });
 
-  activeProcesses.set(id, child);
+  activeProcesses.set(run.id, child);
 
   let buffer = '';
   child.stdout?.on('data', (data: Buffer) => {
@@ -88,58 +97,148 @@ export async function runSkill(
       if (!line.trim()) continue;
       try {
         const event = JSON.parse(line);
+        // Let caller handle custom event logic (e.g. session ID extraction)
+        onStdoutEvent?.(event);
+        // Stream text deltas
         if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
           const delta = event.event.delta;
           if (delta?.type === 'text_delta' && delta.text) {
-            onOutput('stdout', delta.text);
+            onText(delta.text);
           }
         }
+        // Handle result type for non-streaming models
+        if (event.type === 'result' && event.result) {
+          const text = typeof event.result === 'string' ? event.result : event.result.text;
+          if (text) onText(text);
+        }
       } catch {
-        // Not valid JSON, skip
+        // Not valid stream-json — output as raw text (e.g. custom models)
+        onText(line + '\n');
       }
     }
   });
 
-  let stderrBuffer = '';
   child.stderr?.on('data', (data: Buffer) => {
-    stderrBuffer += data.toString();
+    onError(data.toString());
   });
 
   const timeout = setTimeout(() => {
     child.kill('SIGTERM');
     run.status = 'error';
     run.finishedAt = new Date().toISOString();
-    onOutput('stderr', `\nRun timed out after ${TIMEOUT_MS / 1000}s\n`);
+    onError(`\nRun timed out after ${TIMEOUT_MS / 1000}s\n`);
     onStatus('error');
-    activeProcesses.delete(id);
+    activeProcesses.delete(run.id);
   }, TIMEOUT_MS);
 
   child.on('error', (err) => {
     clearTimeout(timeout);
-    activeProcesses.delete(id);
+    activeProcesses.delete(run.id);
     run.status = 'error';
     run.finishedAt = new Date().toISOString();
-    runs.set(id, run);
-    onOutput('stderr', `\nFailed to start process: ${err.message}\n`);
+    runs.set(run.id, run);
+    onError(`\nFailed to start process: ${err.message}\n`);
     onStatus('error');
   });
 
   child.on('close', (code) => {
     clearTimeout(timeout);
-    activeProcesses.delete(id);
+    activeProcesses.delete(run.id);
     if (run.status === 'error') return; // already handled by timeout or spawn error
 
     run.status = code === 0 ? 'completed' : 'failed';
     run.finishedAt = new Date().toISOString();
-    runs.set(id, run);
-    if (run.status === 'failed' && stderrBuffer.trim()) {
-      onOutput('stderr', `\n[stderr]: ${stderrBuffer.trim()}`);
-    }
+    runs.set(run.id, run);
     onStatus(run.status);
+  });
+
+  return child;
+}
+
+function buildCmd(prompt: string, extraArgs: string[] = []): string {
+  const escapedPrompt = prompt.replace(/"/g, '\\"');
+  const base = `claude -p "${escapedPrompt}" --verbose --output-format stream-json --include-partial-messages --allowedTools "Write,Edit,Bash,Read,Glob,Grep"`;
+  return extraArgs.length ? `${base} ${extraArgs.join(' ')}` : base;
+}
+
+// --- Public API ---
+
+export async function runSkill(
+  skillId: string,
+  prompt: string,
+  onOutput: OutputCallback,
+  onStatus: StatusCallback,
+  runId?: string,
+): Promise<SkillRun> {
+  const id = runId || uuid();
+  const run = createRun(id, skillId, prompt);
+  onStatus('running');
+
+  const { workDir, symlinkTarget } = await setupWorkDir(skillId, id);
+  const cmd = buildCmd(prompt);
+
+  onOutput('stderr', `[skill-run] Working directory: ${workDir}\n`);
+  onOutput('stderr', `[skill-run] Command: ${cmd}\n`);
+  onOutput('stderr', `[skill-run] Skill: ${skillId} → ${symlinkTarget}\n\n`);
+
+  spawnClaude({
+    cmd,
+    workDir,
+    run,
+    onText: (text) => onOutput('stdout', text),
+    onError: (text) => onOutput('stderr', text),
+    onStatus,
   });
 
   return run;
 }
+
+/**
+ * Run a playground chat turn. Uses --output-format stream-json to parse session ID.
+ * If resumeSessionId is provided, uses --resume to continue the conversation.
+ */
+export async function runPlaygroundChat(
+  skillId: string,
+  prompt: string,
+  onText: ChatOutputCallback,
+  onStatus: StatusCallback,
+  onSessionId: ChatSessionCallback,
+  resumeSessionId?: string,
+  runId?: string,
+): Promise<SkillRun> {
+  const id = runId || uuid();
+  const run = createRun(id, skillId, prompt);
+  onStatus('running');
+
+  const reuseDir = resumeSessionId ? sessionWorkDirs.get(resumeSessionId) : undefined;
+  const { workDir } = await setupWorkDir(skillId, id, reuseDir);
+
+  const extraArgs = resumeSessionId ? [`--resume "${resumeSessionId}"`] : [];
+  const cmd = buildCmd(prompt, extraArgs);
+
+  let sessionFound = false;
+
+  spawnClaude({
+    cmd,
+    workDir,
+    run,
+    onText,
+    onError: (text) => onText(`[stderr] ${text}`),
+    onStatus,
+    onStdoutEvent: (event) => {
+      // Extract session ID from init or result events
+      if (!sessionFound && event.session_id && (event.type === 'system' || event.type === 'result')) {
+        sessionFound = true;
+        sessionWorkDirs.set(event.session_id, workDir);
+        onSessionId(event.session_id);
+      }
+    },
+  });
+
+  return run;
+}
+
+// --- File access ---
 
 export async function getRunFiles(runId: string, dirPath = '.'): Promise<SkillFile[]> {
   const runDir = getRunDir(runId);
@@ -185,144 +284,6 @@ export function getRunFilePath(runId: string, filePath: string): string {
   const absPath = path.resolve(runDir, filePath);
   if (!absPath.startsWith(runDir)) throw new Error('Path traversal detected');
   return absPath;
-}
-
-export type ChatOutputCallback = (text: string) => void;
-export type ChatSessionCallback = (sessionId: string) => void;
-
-/**
- * Run a playground chat turn. Uses --output-format stream-json to parse session ID.
- * If resumeSessionId is provided, uses --resume to continue the conversation.
- */
-export async function runPlaygroundChat(
-  skillId: string,
-  prompt: string,
-  onText: ChatOutputCallback,
-  onStatus: StatusCallback,
-  onSessionId: ChatSessionCallback,
-  resumeSessionId?: string,
-  runId?: string,
-): Promise<SkillRun> {
-  const id = runId || uuid();
-  const run: SkillRun = {
-    id,
-    skillId,
-    prompt,
-    status: 'running',
-    startedAt: new Date().toISOString(),
-  };
-  runs.set(id, run);
-  onStatus('running');
-
-  const skillDir = getSkillDir(skillId);
-
-  // Reuse the original workdir for resumed sessions
-  const workDir = (resumeSessionId && sessionWorkDirs.get(resumeSessionId)) || getRunDir(id);
-  await fs.mkdir(workDir, { recursive: true });
-
-  // Symlink skill if not already present
-  const skillsLinkDir = path.join(workDir, '.claude', 'skills');
-  await fs.mkdir(skillsLinkDir, { recursive: true });
-  const skillName = skillId.replace(/^@[^/]+\//, '');
-  const symlinkTarget = path.join(skillsLinkDir, skillName);
-  try {
-    await fs.symlink(skillDir, symlinkTarget, 'junction');
-  } catch (err: any) {
-    if (err.code !== 'EEXIST') throw err;
-  }
-
-  const skillMdPath = path.join(skillDir, 'SKILL.md');
-  const escapedPrompt = prompt.replace(/"/g, '\\"');
-  let cmd = `claude -p "${escapedPrompt}" --verbose --output-format stream-json --include-partial-messages --allowedTools "Write,Edit,Bash,Read,Glob,Grep"`;
-
-  if (resumeSessionId) {
-    cmd += ` --resume "${resumeSessionId}"`;
-  }
-
-  const child = spawn(cmd, [], {
-    cwd: workDir,
-    shell: true,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, FORCE_COLOR: '0' },
-  });
-
-  activeProcesses.set(id, child);
-
-  let buffer = '';
-  let sessionFound = false;
-
-  child.stdout?.on('data', (data: Buffer) => {
-    buffer += data.toString();
-    // Process complete JSON lines
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.trim()) continue;
-      try {
-        const event = JSON.parse(line);
-        // Extract session ID from init event
-        if (!sessionFound && event.type === 'system' && event.session_id) {
-          sessionFound = true;
-          sessionWorkDirs.set(event.session_id, workDir);
-          onSessionId(event.session_id);
-        }
-        // Stream text deltas from partial messages
-        if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
-          const delta = event.event.delta;
-          if (delta?.type === 'text_delta' && delta.text) {
-            onText(delta.text);
-          }
-        }
-        // Capture session_id from result if missed
-        if (event.type === 'result' && !sessionFound && event.session_id) {
-          sessionFound = true;
-          sessionWorkDirs.set(event.session_id, workDir);
-          onSessionId(event.session_id);
-        }
-      } catch {
-        // Not valid JSON, skip
-      }
-    }
-  });
-
-  let stderrBuffer = '';
-  child.stderr?.on('data', (data: Buffer) => {
-    stderrBuffer += data.toString();
-  });
-
-  const timeout = setTimeout(() => {
-    child.kill('SIGTERM');
-    run.status = 'error';
-    run.finishedAt = new Date().toISOString();
-    onStatus('error');
-    activeProcesses.delete(id);
-  }, TIMEOUT_MS);
-
-  child.on('error', (err) => {
-    clearTimeout(timeout);
-    activeProcesses.delete(id);
-    run.status = 'error';
-    run.finishedAt = new Date().toISOString();
-    runs.set(id, run);
-    onText(`\n[Error] Failed to start process: ${err.message}`);
-    onStatus('error');
-  });
-
-  child.on('close', (code) => {
-    clearTimeout(timeout);
-    activeProcesses.delete(id);
-    if (run.status === 'error') return;
-
-    run.status = code === 0 ? 'completed' : 'failed';
-    run.finishedAt = new Date().toISOString();
-    runs.set(id, run);
-    if (run.status === 'failed' && stderrBuffer.trim()) {
-      onText(`\n[stderr]: ${stderrBuffer.trim()}`);
-    }
-    onStatus(run.status);
-  });
-
-  return run;
 }
 
 export function cancelRun(runId: string): boolean {
