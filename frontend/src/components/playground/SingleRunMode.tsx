@@ -1,13 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Play, Square, Folder, FileText, Download, Terminal } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { usePlaygroundStore } from '../../stores/playgroundStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { api } from '../../api/client';
 import type { SkillFile } from '@skill-ide/shared';
-
-function colorize(text: string): string {
-  return text.replace(/\x1b\[[0-9;]*m/g, '');
-}
 
 function FileTree({ files, skillId, runId, depth = 0 }: { files: SkillFile[]; skillId: string; runId: string; depth?: number }) {
   return (
@@ -56,6 +54,15 @@ export function SingleRunMode() {
   const { sendMessage } = useWebSocket();
   const [prompt, setPrompt] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const stdoutText = useMemo(
+    () => singleOutput.filter((l) => l.stream === 'stdout').map((l) => l.data).join(''),
+    [singleOutput],
+  );
+  const stderrText = useMemo(
+    () => singleOutput.filter((l) => l.stream === 'stderr').map((l) => l.data).join(''),
+    [singleOutput],
+  );
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -156,23 +163,31 @@ export function SingleRunMode() {
 
       {/* Output + Files */}
       <div className="flex-1 flex overflow-hidden">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs bg-surface-inset">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-surface-inset">
           {singleOutput.length === 0 ? (
             <div className="flex items-center gap-2 text-theme-muted">
               <Terminal className="w-4 h-4" />
               <span>No output yet. Enter a prompt and click Run.</span>
             </div>
           ) : (
-            singleOutput.map((line, i) => (
-              <pre
-                key={i}
-                className={`whitespace-pre-wrap break-all ${
-                  line.stream === 'stderr' ? 'text-red-400' : 'text-theme-primary'
-                }`}
-              >
-                {colorize(line.data)}
-              </pre>
-            ))
+            <>
+              {stderrText && (
+                <pre className="whitespace-pre-wrap break-all text-theme-muted text-xs font-mono mb-3 opacity-60">
+                  {stderrText}
+                </pre>
+              )}
+              {stdoutText && (
+                <div className="prose-chat text-theme-primary break-words">
+                  <Markdown remarkPlugins={[remarkGfm]}>{stdoutText}</Markdown>
+                  {singleRunning && (
+                    <span
+                      className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom rounded-sm animate-pulse-soft"
+                      style={{ background: 'var(--accent)' }}
+                    />
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
 

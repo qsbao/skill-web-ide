@@ -64,18 +64,13 @@ export async function runSkill(
 
   // Find SKILL.md to inject as system prompt
   const skillMdPath = path.join(skillDir, 'SKILL.md');
-  const args = [
-    '-p', prompt,
-    '--verbose',
-    '--append-system-prompt-file', skillMdPath,
-    '--allowedTools', 'Write,Edit,Bash,Read,Glob,Grep',
-  ];
-  const cmd = `claude ${args.map((a) => JSON.stringify(a)).join(' ')}`;
-  onOutput('stdout', `[skill-run] Working directory: ${workDir}\n`);
-  onOutput('stdout', `[skill-run] Command: ${cmd}\n`);
-  onOutput('stdout', `[skill-run] Skill: ${skillId} → ${symlinkTarget}\n\n`);
+  const escapedPrompt = prompt.replace(/"/g, '\\"');
+  const cmd = `claude -p "${escapedPrompt}" --verbose --output-format stream-json --include-partial-messages --allowedTools "Write,Edit,Bash,Read,Glob,Grep"`;
+  onOutput('stderr', `[skill-run] Working directory: ${workDir}\n`);
+  onOutput('stderr', `[skill-run] Command: ${cmd}\n`);
+  onOutput('stderr', `[skill-run] Skill: ${skillId} → ${symlinkTarget}\n\n`);
 
-  const child = spawn('claude', args, {
+  const child = spawn(cmd, [], {
     cwd: workDir,
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -84,12 +79,30 @@ export async function runSkill(
 
   activeProcesses.set(id, child);
 
+  let buffer = '';
   child.stdout?.on('data', (data: Buffer) => {
-    onOutput('stdout', data.toString());
+    buffer += data.toString();
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
+          const delta = event.event.delta;
+          if (delta?.type === 'text_delta' && delta.text) {
+            onOutput('stdout', delta.text);
+          }
+        }
+      } catch {
+        // Not valid JSON, skip
+      }
+    }
   });
 
+  let stderrBuffer = '';
   child.stderr?.on('data', (data: Buffer) => {
-    onOutput('stderr', data.toString());
+    stderrBuffer += data.toString();
   });
 
   const timeout = setTimeout(() => {
@@ -119,6 +132,9 @@ export async function runSkill(
     run.status = code === 0 ? 'completed' : 'failed';
     run.finishedAt = new Date().toISOString();
     runs.set(id, run);
+    if (run.status === 'failed' && stderrBuffer.trim()) {
+      onOutput('stderr', `\n[stderr]: ${stderrBuffer.trim()}`);
+    }
     onStatus(run.status);
   });
 
@@ -216,20 +232,14 @@ export async function runPlaygroundChat(
   }
 
   const skillMdPath = path.join(skillDir, 'SKILL.md');
-  const args = [
-    '-p', prompt,
-    '--verbose',
-    '--output-format', 'stream-json',
-    '--include-partial-messages',
-    '--append-system-prompt-file', skillMdPath,
-    '--allowedTools', 'Write,Edit,Bash,Read,Glob,Grep',
-  ];
+  const escapedPrompt = prompt.replace(/"/g, '\\"');
+  let cmd = `claude -p "${escapedPrompt}" --verbose --output-format stream-json --include-partial-messages --allowedTools "Write,Edit,Bash,Read,Glob,Grep"`;
 
   if (resumeSessionId) {
-    args.push('--resume', resumeSessionId);
+    cmd += ` --resume "${resumeSessionId}"`;
   }
 
-  const child = spawn('claude', args, {
+  const child = spawn(cmd, [], {
     cwd: workDir,
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
