@@ -57,7 +57,7 @@ export async function runSkill(
   const skillName = skillId.replace(/^@[^/]+\//, ''); // extract name from @author/name
   const symlinkTarget = path.join(skillsLinkDir, skillName);
   try {
-    await fs.symlink(skillDir, symlinkTarget, 'dir');
+    await fs.symlink(skillDir, symlinkTarget, 'junction');
   } catch (err: any) {
     if (err.code !== 'EEXIST') throw err;
   }
@@ -101,10 +101,20 @@ export async function runSkill(
     activeProcesses.delete(id);
   }, TIMEOUT_MS);
 
+  child.on('error', (err) => {
+    clearTimeout(timeout);
+    activeProcesses.delete(id);
+    run.status = 'error';
+    run.finishedAt = new Date().toISOString();
+    runs.set(id, run);
+    onOutput('stderr', `\nFailed to start process: ${err.message}\n`);
+    onStatus('error');
+  });
+
   child.on('close', (code) => {
     clearTimeout(timeout);
     activeProcesses.delete(id);
-    if (run.status === 'error') return; // already handled by timeout
+    if (run.status === 'error') return; // already handled by timeout or spawn error
 
     run.status = code === 0 ? 'completed' : 'failed';
     run.finishedAt = new Date().toISOString();
@@ -200,7 +210,7 @@ export async function runPlaygroundChat(
   const skillName = skillId.replace(/^@[^/]+\//, '');
   const symlinkTarget = path.join(skillsLinkDir, skillName);
   try {
-    await fs.symlink(skillDir, symlinkTarget, 'dir');
+    await fs.symlink(skillDir, symlinkTarget, 'junction');
   } catch (err: any) {
     if (err.code !== 'EEXIST') throw err;
   }
@@ -277,6 +287,16 @@ export async function runPlaygroundChat(
     onStatus('error');
     activeProcesses.delete(id);
   }, TIMEOUT_MS);
+
+  child.on('error', (err) => {
+    clearTimeout(timeout);
+    activeProcesses.delete(id);
+    run.status = 'error';
+    run.finishedAt = new Date().toISOString();
+    runs.set(id, run);
+    onText(`\n[Error] Failed to start process: ${err.message}`);
+    onStatus('error');
+  });
 
   child.on('close', (code) => {
     clearTimeout(timeout);

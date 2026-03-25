@@ -50,6 +50,7 @@ export function SingleRunMode() {
     singleActiveRunId,
     singleOutputFiles,
     clearSingleOutput,
+    setSingleRunning,
     setSingleOutputFiles,
   } = usePlaygroundStore();
   const { sendMessage } = useWebSocket();
@@ -71,8 +72,9 @@ export function SingleRunMode() {
   const handleRun = useCallback(() => {
     if (!selectedSkillId || singleRunning || !prompt.trim()) return;
     clearSingleOutput();
+    setSingleRunning(true);
     sendMessage('playground:single', { skillId: selectedSkillId, prompt: prompt.trim() });
-  }, [selectedSkillId, singleRunning, prompt, clearSingleOutput, sendMessage]);
+  }, [selectedSkillId, singleRunning, prompt, clearSingleOutput, setSingleRunning, sendMessage]);
 
   const handleCancel = useCallback(() => {
     if (!selectedSkillId || !singleActiveRunId) return;

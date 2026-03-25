@@ -106,6 +106,8 @@ export function useWebSocket() {
             // Reset running states on error so UI isn't stuck
             setChatRunning(false);
             setSingleRunning(false);
+            setSingleLastStatus('error');
+            addSingleOutput({ stream: 'stderr', data: `[Error] ${msg.payload || 'Unknown error'}\n` });
             break;
         }
       };
