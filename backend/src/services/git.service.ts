@@ -1,11 +1,14 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import simpleGit from 'simple-git';
+import simpleGit, { type SimpleGit } from 'simple-git';
 import { config } from '../config.js';
 
-const git = simpleGit(config.skillsDir);
+let git: SimpleGit;
 
 export async function initRepo(): Promise<void> {
+  await fs.mkdir(config.skillsDir, { recursive: true });
+  git = simpleGit(config.skillsDir);
+
   const gitDir = path.join(config.skillsDir, '.git');
   try {
     await fs.stat(gitDir);
