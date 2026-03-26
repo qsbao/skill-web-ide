@@ -46,10 +46,11 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
               !isStreaming && <span>...</span>
             )}
             {isStreaming && (
-              <span
-                className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom rounded-sm animate-pulse-soft"
-                style={{ background: 'var(--accent)' }}
-              />
+              <span className="sparkle-container">
+                <span className="sparkle" />
+                <span className="sparkle" />
+                <span className="sparkle" />
+              </span>
             )}
           </div>
         )}

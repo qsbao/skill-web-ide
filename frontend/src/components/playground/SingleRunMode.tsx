@@ -148,10 +148,11 @@ export function SingleRunMode() {
                 <div className="prose-chat text-theme-primary break-words">
                   <Markdown remarkPlugins={[remarkGfm]}>{stdoutText}</Markdown>
                   {singleRunning && (
-                    <span
-                      className="inline-block w-1.5 h-4 ml-0.5 align-text-bottom rounded-sm animate-pulse-soft"
-                      style={{ background: 'var(--accent)' }}
-                    />
+                    <span className="sparkle-container">
+                      <span className="sparkle" />
+                      <span className="sparkle" />
+                      <span className="sparkle" />
+                    </span>
                   )}
                 </div>
               )}
