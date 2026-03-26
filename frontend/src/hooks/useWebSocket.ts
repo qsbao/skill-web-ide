@@ -3,6 +3,7 @@ import { useTestStore } from '../stores/testStore';
 import { useRunStore } from '../stores/runStore';
 import { usePlaygroundStore } from '../stores/playgroundStore';
 import { useSessionStore } from '../stores/sessionStore';
+import { api } from '../api/client';
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -22,6 +23,8 @@ export function useWebSocket() {
     setSingleRunning,
     setSingleLastStatus,
     setSingleActiveRunId,
+    setChatActiveRunId,
+    setChatOutputFiles,
   } = usePlaygroundStore();
   const { loadSessions } = useSessionStore();
 
@@ -73,6 +76,11 @@ export function useWebSocket() {
               if (msg.payload.status === 'failed' || msg.payload.status === 'error') {
                 appendToLastAssistant('[Error: chat request failed]');
               }
+              // Fetch work dir files after chat turn completes
+              const { chatActiveRunId, selectedSkillId } = usePlaygroundStore.getState();
+              if (chatActiveRunId && selectedSkillId) {
+                api.getRunFiles(selectedSkillId, chatActiveRunId).then(setChatOutputFiles).catch(() => {});
+              }
               // Refresh sessions list after chat completes
               loadSessions();
             }
@@ -83,9 +91,14 @@ export function useWebSocket() {
           case 'playground:chat:session':
             setSessionId(msg.payload.sessionId);
             break;
-          case 'playground:chat:started':
-            // chatRunning is already set to true in handleSend; no-op here
+          case 'playground:chat:started': {
+            // Track first runId for file listing (work dir is created with first runId)
+            const { chatActiveRunId: existingRunId } = usePlaygroundStore.getState();
+            if (!existingRunId) {
+              setChatActiveRunId(msg.payload.id);
+            }
             break;
+          }
           // Playground single-run messages
           case 'playground:single:output':
             addSingleOutput({ stream: msg.payload.stream, data: msg.payload.data });
@@ -127,6 +140,7 @@ export function useWebSocket() {
     addRunOutput, setRunRunning, setRunLastStatus, setActiveRunId,
     appendToLastAssistant, setChatRunning, setSessionId, setInternalSessionId,
     addSingleOutput, setSingleRunning, setSingleLastStatus, setSingleActiveRunId,
+    setChatActiveRunId, setChatOutputFiles,
     loadSessions,
   ]);
 

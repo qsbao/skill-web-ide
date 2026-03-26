@@ -21,6 +21,9 @@ interface PlaygroundState {
   sessionId: string | null;
   internalSessionId: string | null;
   chatRunning: boolean;
+  chatActiveRunId: string | null;
+  chatOutputFiles: SkillFile[];
+  chatFilesVisible: boolean;
   // Single-run mode
   singleOutput: OutputLine[];
   singleRunning: boolean;
@@ -37,6 +40,9 @@ interface PlaygroundState {
   setSessionId: (id: string | null) => void;
   setInternalSessionId: (id: string | null) => void;
   setChatRunning: (running: boolean) => void;
+  setChatActiveRunId: (id: string | null) => void;
+  setChatOutputFiles: (files: SkillFile[]) => void;
+  setChatFilesVisible: (visible: boolean) => void;
   clearChat: () => void;
   // Single-run actions
   addSingleOutput: (line: OutputLine) => void;
@@ -55,6 +61,9 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   sessionId: null,
   internalSessionId: null,
   chatRunning: false,
+  chatActiveRunId: null,
+  chatOutputFiles: [],
+  chatFilesVisible: false,
   // Single-run
   singleOutput: [],
   singleRunning: false,
@@ -81,7 +90,10 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setSessionId: (id) => set({ sessionId: id }),
   setInternalSessionId: (id) => set({ internalSessionId: id }),
   setChatRunning: (running) => set({ chatRunning: running }),
-  clearChat: () => set({ messages: [], sessionId: null, internalSessionId: null, chatRunning: false }),
+  setChatActiveRunId: (id) => set({ chatActiveRunId: id }),
+  setChatOutputFiles: (files) => set({ chatOutputFiles: files }),
+  setChatFilesVisible: (visible) => set({ chatFilesVisible: visible }),
+  clearChat: () => set({ messages: [], sessionId: null, internalSessionId: null, chatRunning: false, chatActiveRunId: null, chatOutputFiles: [], chatFilesVisible: false }),
   // Single-run actions
   addSingleOutput: (line) =>
     set((state) => ({ singleOutput: [...state.singleOutput, line] })),
