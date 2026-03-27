@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useParams, Link, NavLink } from 'react-router-dom';
-import { Blocks, LayoutDashboard, Code2, PlayCircle } from 'lucide-react';
+import { Blocks, LayoutDashboard, Code2, PlayCircle, MessageSquarePlus } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 const NAV_ITEMS = [
@@ -66,6 +66,16 @@ export function AppShell() {
         <NavTabs />
 
         <div className="flex-1" />
+        <a
+          href="https://github.com/qsbao/skill-web-ide/issues/new/choose"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-theme-secondary hover:text-theme-primary hover:bg-surface-overlay/50 transition-all duration-150"
+          title="Report a bug or request a feature"
+        >
+          <MessageSquarePlus className="w-3.5 h-3.5" />
+          Feedback
+        </a>
         <ThemeToggle />
       </header>
 
