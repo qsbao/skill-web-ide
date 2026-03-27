@@ -27,7 +27,7 @@ function buildPlaygroundUrl(skillId: string | null, sessionId: string | null): s
 export function PlaygroundPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { mode, setMode, selectedSkillId, setSelectedSkillId, internalSessionId } = usePlaygroundStore();
+  const { mode, setMode, selectedSkillId, setSelectedSkillId, internalSessionId, clearChat } = usePlaygroundStore();
   const { restoreSession } = usePlaygroundStore();
   const { fetchSession } = useSessionStore();
   const restoringRef = useRef(false);
@@ -45,17 +45,21 @@ export function PlaygroundPage() {
     }
   }, [searchParams, internalSessionId, fetchSession, restoreSession]);
 
-  // Pre-select skill from URL ?skillId=xxx (only when no sessionId)
+  // Pre-select skill from URL ?skillId=xxx (only when no sessionId):
+  // clear any existing session so the user starts fresh
   useEffect(() => {
     const skillId = searchParams.get('skillId');
     if (skillId && !searchParams.get('sessionId')) {
+      clearChat();
       setSelectedSkillId(skillId);
     }
-  }, [searchParams, setSelectedSkillId]);
+  }, [searchParams, setSelectedSkillId, clearChat]);
 
-  // Sync internalSessionId to URL
+  // Sync internalSessionId to URL (skip when URL has skillId-only — user wants a fresh session)
   useEffect(() => {
     const currentSessionId = searchParams.get('sessionId');
+    const hasSkillIdOnly = searchParams.get('skillId') && !currentSessionId;
+    if (hasSkillIdOnly) return;
     if (internalSessionId && internalSessionId !== currentSessionId) {
       navigate(buildPlaygroundUrl(selectedSkillId, internalSessionId), { replace: true });
     } else if (!internalSessionId && currentSessionId) {
