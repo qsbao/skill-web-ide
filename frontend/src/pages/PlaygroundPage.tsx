@@ -1,16 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ExternalLink, MessageSquare, Zap } from 'lucide-react';
-import { usePlaygroundStore, type PlaygroundMode } from '../stores/playgroundStore';
+import { ExternalLink } from 'lucide-react';
+import { usePlaygroundStore } from '../stores/playgroundStore';
 import { useSessionStore } from '../stores/sessionStore';
 import { SkillSelector } from '../components/playground/SkillSelector';
 import { ChatMode } from '../components/playground/ChatMode';
-import { SingleRunMode } from '../components/playground/SingleRunMode';
-
-const MODES: { key: PlaygroundMode; label: string; icon: typeof MessageSquare }[] = [
-  { key: 'chat', label: 'Chat', icon: MessageSquare },
-  { key: 'single', label: 'Single Run', icon: Zap },
-];
 
 function buildPlaygroundUrl(skillId: string | null, sessionId: string | null): string {
   const params = new URLSearchParams();
@@ -27,7 +21,7 @@ function buildPlaygroundUrl(skillId: string | null, sessionId: string | null): s
 export function PlaygroundPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { mode, setMode, selectedSkillId, setSelectedSkillId, internalSessionId, clearChat } = usePlaygroundStore();
+  const { selectedSkillId, setSelectedSkillId, internalSessionId, clearChat } = usePlaygroundStore();
   const { restoreSession } = usePlaygroundStore();
   const { fetchSession } = useSessionStore();
   const restoringRef = useRef(false);
@@ -92,32 +86,11 @@ export function PlaygroundPage() {
           </button>
         )}
 
-        {/* Mode pill toggle */}
-        <div className="flex ml-auto bg-surface-inset rounded-lg p-0.5 border border-border-subtle/50">
-          {MODES.map((m) => {
-            const Icon = m.icon;
-            const isActive = mode === m.key;
-            return (
-              <button
-                key={m.key}
-                onClick={() => setMode(m.key)}
-                className={`inline-flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-md transition-all duration-150 font-medium ${
-                  isActive
-                    ? 'bg-accent-muted text-white shadow-glow-sm'
-                    : 'text-theme-secondary hover:text-theme-primary hover:bg-surface-overlay/50'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {m.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {mode === 'chat' ? <ChatMode /> : <SingleRunMode />}
+        <ChatMode />
       </div>
     </div>
   );
