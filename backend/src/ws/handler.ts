@@ -106,6 +106,15 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             }
           })();
 
+          // Persist the runId so files can be loaded when restoring the session
+          sessionSetup.then(() => {
+            if (activeInternalSessionId) {
+              return sessionService.setRunId(activeInternalSessionId, runId);
+            }
+          }).catch((err) => {
+            console.error(`[session] Failed to set runId:`, err);
+          });
+
           runService.runPlaygroundChat(
             skillId,
             prompt,
@@ -123,16 +132,18 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
               }));
               // Persist assistant message on completion
               if (status !== 'running' && activeInternalSessionId) {
-                sessionSetup.then(() => {
+                sessionSetup.then(async () => {
                   if (assistantText.trim()) {
-                    sessionService.addMessage(activeInternalSessionId!, {
+                    await sessionService.addMessage(activeInternalSessionId!, {
                       role: 'assistant',
                       content: assistantText,
                       timestamp: new Date().toISOString(),
                     });
                   }
                   const sessionStatus = status === 'completed' ? 'completed' : 'failed';
-                  sessionService.updateStatus(activeInternalSessionId!, sessionStatus);
+                  await sessionService.updateStatus(activeInternalSessionId!, sessionStatus);
+                }).catch((err) => {
+                  console.error(`[session] Failed to persist chat completion:`, err);
                 });
               }
             },
@@ -144,7 +155,9 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
               // Persist Claude session ID
               if (activeInternalSessionId) {
                 sessionSetup.then(() => {
-                  sessionService.setClaudeSessionId(activeInternalSessionId!, newSessionId);
+                  return sessionService.setClaudeSessionId(activeInternalSessionId!, newSessionId);
+                }).catch((err) => {
+                  console.error(`[session] Failed to set claudeSessionId:`, err);
                 });
               }
             },
@@ -196,17 +209,19 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
               }));
               // Persist output on completion
               if (status !== 'running' && internalSessionId) {
-                sessionSetup.then(() => {
+                sessionSetup.then(async () => {
                   if (outputText.trim()) {
-                    sessionService.addMessage(internalSessionId!, {
+                    await sessionService.addMessage(internalSessionId!, {
                       role: 'assistant',
                       content: outputText,
                       timestamp: new Date().toISOString(),
                     });
                   }
-                  sessionService.updateOutput(internalSessionId!, outputText);
+                  await sessionService.updateOutput(internalSessionId!, outputText);
                   const sessionStatus = status === 'completed' ? 'completed' : 'failed';
-                  sessionService.updateStatus(internalSessionId!, sessionStatus);
+                  await sessionService.updateStatus(internalSessionId!, sessionStatus);
+                }).catch((err) => {
+                  console.error(`[session] Failed to persist single-run completion:`, err);
                 });
               }
             },

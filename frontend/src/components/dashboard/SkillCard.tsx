@@ -56,7 +56,7 @@ export function SkillCard({ skill, onCopy, onDelete }: SkillCardProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/playground/${idWithoutAt}`);
+              navigate(`/playground?skillId=${encodeURIComponent(skill.id)}`);
             }}
             title="Try in Playground"
             className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-400/10 transition-colors"

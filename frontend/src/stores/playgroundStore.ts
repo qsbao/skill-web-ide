@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { SkillFile } from '@skill-ide/shared';
+import type { SkillFile, Session } from '@skill-ide/shared';
+import { api } from '../api/client';
 
 export type PlaygroundMode = 'chat' | 'single';
 
@@ -51,6 +52,7 @@ interface PlaygroundState {
   setSingleLastStatus: (status: string | null) => void;
   setSingleActiveRunId: (id: string | null) => void;
   setSingleOutputFiles: (files: SkillFile[]) => void;
+  restoreSession: (session: Session) => void;
 }
 
 export const usePlaygroundStore = create<PlaygroundState>((set) => ({
@@ -103,4 +105,25 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
   setSingleLastStatus: (status) => set({ singleLastStatus: status }),
   setSingleActiveRunId: (id) => set({ singleActiveRunId: id }),
   setSingleOutputFiles: (files) => set({ singleOutputFiles: files }),
+  restoreSession: (session) => {
+    set({
+      mode: 'chat',
+      selectedSkillId: session.skillId,
+      messages: session.messages
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      internalSessionId: session.id,
+      sessionId: session.claudeSessionId,
+      chatRunning: false,
+      chatActiveRunId: session.runId || null,
+      chatOutputFiles: [],
+      chatFilesVisible: false,
+    });
+    // Load work dir files if runId exists
+    if (session.runId) {
+      api.getRunFiles(session.skillId, session.runId).then((files) => {
+        set({ chatOutputFiles: files });
+      }).catch(() => {});
+    }
+  },
 }));

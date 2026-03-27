@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ExternalLink, MessageSquare, Zap } from 'lucide-react';
 import { usePlaygroundStore, type PlaygroundMode } from '../stores/playgroundStore';
+import { useSessionStore } from '../stores/sessionStore';
 import { SkillSelector } from '../components/playground/SkillSelector';
 import { ChatMode } from '../components/playground/ChatMode';
 import { SingleRunMode } from '../components/playground/SingleRunMode';
@@ -11,26 +12,60 @@ const MODES: { key: PlaygroundMode; label: string; icon: typeof MessageSquare }[
   { key: 'single', label: 'Single Run', icon: Zap },
 ];
 
-export function PlaygroundPage() {
-  const { author, name } = useParams<{ author: string; name: string }>();
-  const navigate = useNavigate();
-  const { mode, setMode, selectedSkillId, setSelectedSkillId } = usePlaygroundStore();
+function buildPlaygroundUrl(skillId: string | null, sessionId: string | null): string {
+  const params = new URLSearchParams();
+  if (sessionId) {
+    // skill is derived from session data on load, no need to duplicate in URL
+    params.set('sessionId', sessionId);
+  } else if (skillId) {
+    params.set('skillId', skillId);
+  }
+  const qs = params.toString();
+  return qs ? `/playground?${qs}` : '/playground';
+}
 
-  // Pre-select skill from URL params
+export function PlaygroundPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { mode, setMode, selectedSkillId, setSelectedSkillId, internalSessionId } = usePlaygroundStore();
+  const { restoreSession } = usePlaygroundStore();
+  const { fetchSession } = useSessionStore();
+  const restoringRef = useRef(false);
+
+  // Restore session from URL ?sessionId=xxx
   useEffect(() => {
-    if (author && name) {
-      setSelectedSkillId(`@${author}/${name}`);
+    const sessionId = searchParams.get('sessionId');
+    if (sessionId && sessionId !== internalSessionId && !restoringRef.current) {
+      restoringRef.current = true;
+      fetchSession(sessionId).then((session) => {
+        restoreSession(session);
+      }).catch(() => {}).finally(() => {
+        restoringRef.current = false;
+      });
     }
-  }, [author, name, setSelectedSkillId]);
+  }, [searchParams, internalSessionId, fetchSession, restoreSession]);
+
+  // Pre-select skill from URL ?skillId=xxx (only when no sessionId)
+  useEffect(() => {
+    const skillId = searchParams.get('skillId');
+    if (skillId && !searchParams.get('sessionId')) {
+      setSelectedSkillId(skillId);
+    }
+  }, [searchParams, setSelectedSkillId]);
+
+  // Sync internalSessionId to URL
+  useEffect(() => {
+    const currentSessionId = searchParams.get('sessionId');
+    if (internalSessionId && internalSessionId !== currentSessionId) {
+      navigate(buildPlaygroundUrl(selectedSkillId, internalSessionId), { replace: true });
+    } else if (!internalSessionId && currentSessionId) {
+      navigate(buildPlaygroundUrl(selectedSkillId, null), { replace: true });
+    }
+  }, [internalSessionId, selectedSkillId, searchParams, navigate]);
 
   const handleSkillChange = (id: string | null) => {
     setSelectedSkillId(id);
-    if (id) {
-      const slug = id.startsWith('@') ? id.slice(1) : id;
-      navigate(`/playground/${slug}`, { replace: true });
-    } else {
-      navigate('/playground', { replace: true });
-    }
+    navigate(buildPlaygroundUrl(id, internalSessionId), { replace: true });
   };
 
   return (

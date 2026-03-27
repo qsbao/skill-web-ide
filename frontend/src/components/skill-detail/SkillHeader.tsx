@@ -23,7 +23,7 @@ export function SkillHeader({ skill, frontmatter }: SkillHeaderProps) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => navigate(`/playground/${idWithoutAt}`)}
+            onClick={() => navigate(`/playground?skillId=${encodeURIComponent(skill.id)}`)}
             className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-sm font-medium rounded-lg text-white transition-all duration-150 bg-emerald-600 hover:bg-emerald-500 shadow-sm hover:shadow-md"
           >
             <Play className="w-3.5 h-3.5" />

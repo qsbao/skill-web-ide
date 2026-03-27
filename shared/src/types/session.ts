@@ -14,6 +14,7 @@ export interface Session {
   type: SessionType;
   status: SessionStatus;
   claudeSessionId: string | null;
+  runId: string | null;
   messages: SessionMessage[];
   prompt: string;
   output: string;

@@ -21,7 +21,6 @@ export function App() {
           <Route path="/skills/:author/:name" element={<SkillDetailPage />} />
           <Route path="/ide/:author/:name" element={<IDEPage />} />
           <Route path="/ide" element={<IDEPage />} />
-          <Route path="/playground/:author/:name" element={<PlaygroundPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
         </Route>
       </Routes>

@@ -1,20 +1,20 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { History } from 'lucide-react';
 import { useSessionStore } from '../stores/sessionStore';
 import { SessionCard } from '../components/sessions/SessionCard';
-import { SessionDetail } from '../components/sessions/SessionDetail';
 
 export function SessionsPage() {
-  const { sessions, selectedSession, loading, loadSessions, loadSession, clearSelectedSession, removeSession } =
-    useSessionStore();
+  const navigate = useNavigate();
+  const { sessions, loading, loadSessions, removeSession } = useSessionStore();
 
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
 
-  if (selectedSession) {
-    return <SessionDetail session={selectedSession} onBack={clearSelectedSession} />;
-  }
+  const handleClick = (id: string) => {
+    navigate(`/playground?sessionId=${encodeURIComponent(id)}`);
+  };
 
   return (
     <div className="h-full flex flex-col bg-surface-base">
@@ -42,8 +42,7 @@ export function SessionsPage() {
               <SessionCard
                 key={session.id}
                 session={session}
-                isSelected={false}
-                onClick={() => loadSession(session.id)}
+                onClick={() => handleClick(session.id)}
                 onDelete={() => removeSession(session.id)}
               />
             ))}

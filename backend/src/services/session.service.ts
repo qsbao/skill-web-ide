@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { v4 as uuid } from 'uuid';
 import { config } from '../config.js';
+import { withSessionLock } from './session-lock.js';
 import type { Session, SessionSummary, SessionMessage, SessionType, SessionStatus } from '@skill-ide/shared';
 
 function sessionPath(id: string): string {
@@ -22,6 +23,7 @@ export async function createSession(
     type,
     status: 'active',
     claudeSessionId: null,
+    runId: null,
     messages: [],
     prompt,
     output: '',
@@ -77,42 +79,79 @@ export async function listSessions(skillId?: string): Promise<SessionSummary[]> 
 }
 
 export async function addMessage(id: string, message: SessionMessage): Promise<void> {
-  const session = await getSession(id);
-  if (!session) return;
-  session.messages.push(message);
-  session.updatedAt = new Date().toISOString();
-  await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  return withSessionLock(id, async () => {
+    const session = await getSession(id);
+    if (!session) {
+      console.warn(`[session] addMessage: session ${id} not found`);
+      return;
+    }
+    session.messages.push(message);
+    session.updatedAt = new Date().toISOString();
+    await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  });
 }
 
 export async function updateStatus(id: string, status: SessionStatus): Promise<void> {
-  const session = await getSession(id);
-  if (!session) return;
-  session.status = status;
-  session.updatedAt = new Date().toISOString();
-  await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  return withSessionLock(id, async () => {
+    const session = await getSession(id);
+    if (!session) {
+      console.warn(`[session] updateStatus: session ${id} not found`);
+      return;
+    }
+    session.status = status;
+    session.updatedAt = new Date().toISOString();
+    await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  });
 }
 
 export async function setClaudeSessionId(id: string, claudeSessionId: string): Promise<void> {
-  const session = await getSession(id);
-  if (!session) return;
-  session.claudeSessionId = claudeSessionId;
-  session.updatedAt = new Date().toISOString();
-  await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  return withSessionLock(id, async () => {
+    const session = await getSession(id);
+    if (!session) {
+      console.warn(`[session] setClaudeSessionId: session ${id} not found`);
+      return;
+    }
+    session.claudeSessionId = claudeSessionId;
+    session.updatedAt = new Date().toISOString();
+    await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  });
+}
+
+export async function setRunId(id: string, runId: string): Promise<void> {
+  return withSessionLock(id, async () => {
+    const session = await getSession(id);
+    if (!session) {
+      console.warn(`[session] setRunId: session ${id} not found`);
+      return;
+    }
+    if (!session.runId) {
+      session.runId = runId;
+      session.updatedAt = new Date().toISOString();
+      await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+    }
+  });
 }
 
 export async function updateOutput(id: string, output: string): Promise<void> {
-  const session = await getSession(id);
-  if (!session) return;
-  session.output = output;
-  session.updatedAt = new Date().toISOString();
-  await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  return withSessionLock(id, async () => {
+    const session = await getSession(id);
+    if (!session) {
+      console.warn(`[session] updateOutput: session ${id} not found`);
+      return;
+    }
+    session.output = output;
+    session.updatedAt = new Date().toISOString();
+    await fs.writeFile(sessionPath(id), JSON.stringify(session, null, 2), 'utf-8');
+  });
 }
 
 export async function deleteSession(id: string): Promise<boolean> {
-  try {
-    await fs.unlink(sessionPath(id));
-    return true;
-  } catch {
-    return false;
-  }
+  return withSessionLock(id, async () => {
+    try {
+      await fs.unlink(sessionPath(id));
+      return true;
+    } catch {
+      return false;
+    }
+  });
 }

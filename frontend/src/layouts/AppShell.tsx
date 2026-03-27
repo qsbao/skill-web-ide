@@ -29,7 +29,7 @@ function NavTabs() {
 
         // Build the link target — preserve current skill context if applicable
         let href = item.to;
-        if (params.author && params.name && (item.to === '/ide' || item.to === '/playground')) {
+        if (params.author && params.name && item.to === '/ide') {
           href = `${item.to}/${params.author}/${params.name}`;
         }
 

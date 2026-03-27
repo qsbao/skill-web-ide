@@ -3,7 +3,6 @@ import type { SessionSummary } from '@skill-ide/shared';
 
 interface SessionCardProps {
   session: SessionSummary;
-  isSelected: boolean;
   onClick: () => void;
   onDelete: () => void;
 }
@@ -20,15 +19,13 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function SessionCard({ session, isSelected, onClick, onDelete }: SessionCardProps) {
+export function SessionCard({ session, onClick, onDelete }: SessionCardProps) {
   const TypeIcon = session.type === 'chat' ? MessageSquare : Zap;
 
   return (
     <div
       onClick={onClick}
-      className={`card p-3.5 cursor-pointer group transition-all duration-150 ${
-        isSelected ? 'ring-1 ring-accent/50 bg-accent-subtle/30' : ''
-      }`}
+      className="card p-3.5 cursor-pointer group transition-all duration-150"
     >
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex items-center gap-2 min-w-0">
