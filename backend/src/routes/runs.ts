@@ -38,8 +38,9 @@ export const runRoutes: FastifyPluginAsync = async (app) => {
       const stat = await fs.stat(absPath);
       const stream = await fs.readFile(absPath);
       const fileName = path.basename(filePath);
+      const encodedName = encodeURIComponent(fileName).replace(/'/g, '%27');
       return reply
-        .header('Content-Disposition', `attachment; filename="${fileName}"`)
+        .header('Content-Disposition', `attachment; filename="${encodedName}"; filename*=UTF-8''${encodedName}`)
         .header('Content-Length', stat.size)
         .type('application/octet-stream')
         .send(stream);

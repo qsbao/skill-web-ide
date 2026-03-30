@@ -103,7 +103,7 @@ export const api = {
   readRunFile: (skillId: string, runId: string, path: string) =>
     request<{ path: string; content: string }>(`${skillPath(skillId)}/runs/${runId}/files/${path}`),
   getRunDownloadUrl: (skillId: string, runId: string, path: string) =>
-    `${BASE}${skillPath(skillId)}/runs/${runId}/download/${path}`,
+    `${BASE}${skillPath(skillId)}/runs/${runId}/download/${encodeURIComponent(path)}`,
   cancelRun: (skillId: string, runId: string) =>
     request<{ ok: boolean }>(`${skillPath(skillId)}/runs/${runId}/cancel`, { method: 'POST' }),
 
