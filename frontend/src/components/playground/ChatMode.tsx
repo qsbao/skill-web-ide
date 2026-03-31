@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { RefreshCw, Send, MessageSquare, FolderOpen } from 'lucide-react';
+import { RefreshCw, Send, MessageSquare, FolderOpen, Share2, Check } from 'lucide-react';
 import { usePlaygroundStore } from '../../stores/playgroundStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { MessageBubble } from './MessageBubble';
@@ -23,6 +23,7 @@ export function ChatMode() {
   } = usePlaygroundStore();
   const { sendMessage } = useWebSocket();
   const [input, setInput] = useState('');
+  const [shareCopied, setShareCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [filesJustAppeared, setFilesJustAppeared] = useState(false);
   const prevHadFiles = useRef(false);
@@ -119,6 +120,21 @@ export function ChatMode() {
               </span>
             </button>
           )}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              setShareCopied(true);
+              setTimeout(() => setShareCopied(false), 2000);
+            }}
+            className={[
+              'btn-ghost text-xs gap-1.5 transition-all duration-150',
+              shareCopied ? 'text-green-400' : '',
+            ].join(' ')}
+            title="Copy share link"
+          >
+            {shareCopied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
+            {shareCopied ? 'Copied!' : 'Share'}
+          </button>
           <button
             onClick={clearChat}
             className="btn-ghost text-xs gap-1.5"
