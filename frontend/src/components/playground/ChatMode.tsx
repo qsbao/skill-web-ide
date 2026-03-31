@@ -4,6 +4,8 @@ import { usePlaygroundStore } from '../../stores/playgroundStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { MessageBubble } from './MessageBubble';
 import { FileTree } from './FileTree';
+import { api } from '../../api/client';
+import type { SkillMeta } from '@skill-ide/shared';
 
 export function ChatMode() {
   const {
@@ -24,6 +26,7 @@ export function ChatMode() {
   const { sendMessage } = useWebSocket();
   const [input, setInput] = useState('');
   const [shareCopied, setShareCopied] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState<SkillMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [filesJustAppeared, setFilesJustAppeared] = useState(false);
   const prevHadFiles = useRef(false);
@@ -49,6 +52,13 @@ export function ChatMode() {
     }
     return count(chatOutputFiles);
   }, [chatOutputFiles]);
+
+  useEffect(() => {
+    if (!selectedSkillId) { setSelectedSkill(null); return; }
+    api.getSkill(selectedSkillId).then(setSelectedSkill).catch(() => setSelectedSkill(null));
+  }, [selectedSkillId]);
+
+  const examplePrompts = selectedSkill?.examplePrompts ?? [];
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -155,7 +165,24 @@ export function ChatMode() {
                 <div className="w-10 h-10 rounded-lg bg-surface-overlay/50 border border-border-subtle/40 flex items-center justify-center mb-3">
                   <MessageSquare className="w-5 h-5 text-theme-muted" />
                 </div>
-                <span className="text-theme-muted text-sm">Send a message to start the conversation</span>
+                {examplePrompts.length > 0 ? (
+                  <>
+                    <span className="text-theme-muted text-sm mb-5">Try one of these prompts to get started</span>
+                    <div className="flex flex-wrap justify-center gap-3 w-full max-w-lg">
+                      {examplePrompts.map((prompt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setInput(prompt)}
+                          className="text-left px-4 py-3 rounded-xl border border-accent/30 bg-accent-muted/10 hover:bg-accent-muted/25 hover:border-accent/50 text-sm text-theme-primary shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <span className="text-theme-muted text-sm">Send a message to start the conversation</span>
+                )}
               </div>
             ) : (
               messages.map((msg, i) => (

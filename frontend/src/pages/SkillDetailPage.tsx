@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { SkillHeader } from '../components/skill-detail/SkillHeader';
 import { MarkdownBody } from '../components/skill-detail/MarkdownBody';
 import { FileViewer } from '../components/skill-detail/FileViewer';
+import { ExamplePromptsEditor } from '../components/skill-detail/ExamplePromptsEditor';
 import type { SkillMeta, SkillFile } from '@skill-ide/shared';
 
 export function SkillDetailPage() {
@@ -64,6 +65,14 @@ export function SkillDetailPage() {
     <div className="h-full bg-surface-base overflow-y-auto">
       <div className="max-w-5xl mx-auto px-6 py-8 animate-fade-in">
         <SkillHeader skill={skill} frontmatter={readme.frontmatter} />
+
+        <div className="mt-8">
+          <ExamplePromptsEditor
+            skillId={skillId}
+            initialPrompts={skill.examplePrompts ?? []}
+            onSaved={(prompts) => setSkill({ ...skill, examplePrompts: prompts })}
+          />
+        </div>
 
         <div className="mt-8">
           <MarkdownBody content={readme.body} />

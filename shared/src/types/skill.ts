@@ -8,6 +8,7 @@ export interface SkillMeta {
   entrypoint: string;
   createdAt: string;
   updatedAt: string;
+  examplePrompts?: string[];
 }
 
 export interface SkillFile {
