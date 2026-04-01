@@ -57,7 +57,14 @@ export function runTest(
   const child = spawn(cmd, args, {
     cwd: skillDir,
     shell: true,
-    env: { ...process.env, FORCE_COLOR: '1' },
+    env: {
+      ...process.env,
+      FORCE_COLOR: '1',
+      HTTP_PROXY: '',
+      HTTPS_PROXY: '',
+      http_proxy: '',
+      https_proxy: '',
+    },
   });
 
   activeProcesses.set(id, child);

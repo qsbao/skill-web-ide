@@ -83,12 +83,21 @@ function spawnClaude(opts: SpawnOptions): ChildProcess {
     cwd: workDir,
     shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, FORCE_COLOR: '0' },
+    env: {
+      ...process.env,
+      FORCE_COLOR: '0',
+      // Clear proxy settings so claude CLI connects directly to custom model endpoints
+      HTTP_PROXY: '',
+      HTTPS_PROXY: '',
+      http_proxy: '',
+      https_proxy: '',
+    },
   });
 
   activeProcesses.set(run.id, child);
 
   let buffer = '';
+  let hasStreamedText = false;
   child.stdout?.on('data', (data: Buffer) => {
     buffer += data.toString();
     const lines = buffer.split('\n');
@@ -103,11 +112,12 @@ function spawnClaude(opts: SpawnOptions): ChildProcess {
         if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
           const delta = event.event.delta;
           if (delta?.type === 'text_delta' && delta.text) {
+            hasStreamedText = true;
             onText(delta.text);
           }
         }
-        // Handle result type for non-streaming models
-        if (event.type === 'result' && event.result) {
+        // Handle result type — only emit if we didn't already stream the text via deltas
+        if (event.type === 'result' && event.result && !hasStreamedText) {
           const text = typeof event.result === 'string' ? event.result : event.result.text;
           if (text) onText(text);
         }
