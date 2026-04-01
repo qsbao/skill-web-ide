@@ -25,9 +25,20 @@ export function PlaygroundPage() {
   const { restoreSession } = usePlaygroundStore();
   const { fetchSession } = useSessionStore();
   const restoringRef = useRef(false);
+  // Keep a ref of internalSessionId so the restore effect can read the current
+  // value without re-triggering when clearChat() sets it to null.
+  const internalSessionIdRef = useRef(internalSessionId);
+  internalSessionIdRef.current = internalSessionId;
   // Track whether the initial ?skillId= clearing has happened,
   // so we don't sync a stale session ID into the URL before clearChat() runs.
   const skillInitRef = useRef(false);
+
+  // Clear session state when navigating away from playground
+  useEffect(() => {
+    return () => {
+      clearChat();
+    };
+  }, [clearChat]);
 
   // Pre-select skill from URL ?skillId=xxx (only when no sessionId):
   // clear any existing session so the user starts fresh.
@@ -44,9 +55,12 @@ export function PlaygroundPage() {
   }, [searchParams, setSelectedSkillId, clearChat]);
 
   // Restore session from URL ?sessionId=xxx
+  // Only depends on searchParams (not internalSessionId) so that clearChat()
+  // setting internalSessionId to null doesn't re-trigger a restore while the
+  // URL still has the old sessionId param.
   useEffect(() => {
     const sessionId = searchParams.get('sessionId');
-    if (sessionId && sessionId !== internalSessionId && !restoringRef.current) {
+    if (sessionId && sessionId !== internalSessionIdRef.current && !restoringRef.current) {
       restoringRef.current = true;
       fetchSession(sessionId).then((session) => {
         restoreSession(session);
@@ -54,7 +68,7 @@ export function PlaygroundPage() {
         restoringRef.current = false;
       });
     }
-  }, [searchParams, internalSessionId, fetchSession, restoreSession]);
+  }, [searchParams, fetchSession, restoreSession]);
 
   // Sync internalSessionId to URL
   useEffect(() => {
