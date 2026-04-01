@@ -5,8 +5,9 @@ import { api } from '../api/client';
 export type PlaygroundMode = 'chat' | 'single';
 
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'tool_use';
   content: string;
+  toolName?: string;
 }
 
 interface OutputLine {
@@ -37,6 +38,7 @@ interface PlaygroundState {
   // Chat actions
   addUserMessage: (content: string) => void;
   addAssistantMessage: (content: string) => void;
+  addToolUseMessage: (toolName: string, toolInput: string) => void;
   appendToLastAssistant: (content: string) => void;
   setSessionId: (id: string | null) => void;
   setInternalSessionId: (id: string | null) => void;
@@ -80,6 +82,20 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
     set((state) => ({ messages: [...state.messages, { role: 'user', content }] })),
   addAssistantMessage: (content) =>
     set((state) => ({ messages: [...state.messages, { role: 'assistant', content }] })),
+  addToolUseMessage: (toolName, toolInput) =>
+    set((state) => {
+      const msgs = [...state.messages];
+      const last = msgs[msgs.length - 1];
+      // Insert tool_use before the current streaming assistant message
+      if (last?.role === 'assistant') {
+        const assistantMsg = msgs.pop()!;
+        msgs.push({ role: 'tool_use', content: toolInput, toolName });
+        msgs.push(assistantMsg);
+      } else {
+        msgs.push({ role: 'tool_use', content: toolInput, toolName });
+      }
+      return { messages: msgs };
+    }),
   appendToLastAssistant: (content) =>
     set((state) => {
       const msgs = [...state.messages];
@@ -110,8 +126,8 @@ export const usePlaygroundStore = create<PlaygroundState>((set) => ({
       mode: 'chat',
       selectedSkillId: session.skillId,
       messages: session.messages
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        .filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'tool_use')
+        .map((m) => ({ role: m.role as 'user' | 'assistant' | 'tool_use', content: m.content, toolName: m.toolName })),
       internalSessionId: session.id,
       sessionId: session.claudeSessionId,
       chatRunning: false,

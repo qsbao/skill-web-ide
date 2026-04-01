@@ -15,6 +15,7 @@ export type OutputCallback = (stream: 'stdout' | 'stderr', data: string) => void
 export type StatusCallback = (status: RunStatus) => void;
 export type ChatOutputCallback = (text: string) => void;
 export type ChatSessionCallback = (sessionId: string) => void;
+export type ToolUseCallback = (toolName: string, toolInput: string) => void;
 
 export function getSkillRuns(skillId: string): SkillRun[] {
   return Array.from(runs.values())
@@ -74,10 +75,11 @@ interface SpawnOptions {
   onError: (text: string) => void;
   onStatus: StatusCallback;
   onStdoutEvent?: (event: any) => void;
+  onToolUse?: ToolUseCallback;
 }
 
 function spawnClaude(opts: SpawnOptions): ChildProcess {
-  const { cmd, workDir, run, onText, onError, onStatus, onStdoutEvent } = opts;
+  const { cmd, workDir, run, onText, onError, onStatus, onStdoutEvent, onToolUse } = opts;
 
   const child = spawn(cmd, [], {
     cwd: workDir,
@@ -98,6 +100,9 @@ function spawnClaude(opts: SpawnOptions): ChildProcess {
 
   let buffer = '';
   let hasStreamedText = false;
+  // Track active tool_use content blocks by index
+  const activeToolBlocks = new Map<number, { name: string; input: string }>();
+
   child.stdout?.on('data', (data: Buffer) => {
     buffer += data.toString();
     const lines = buffer.split('\n');
@@ -108,14 +113,42 @@ function spawnClaude(opts: SpawnOptions): ChildProcess {
         const event = JSON.parse(line);
         // Let caller handle custom event logic (e.g. session ID extraction)
         onStdoutEvent?.(event);
-        // Stream text deltas
-        if (event.type === 'stream_event' && event.event?.type === 'content_block_delta') {
-          const delta = event.event.delta;
-          if (delta?.type === 'text_delta' && delta.text) {
-            hasStreamedText = true;
-            onText(delta.text);
+
+        if (event.type === 'stream_event') {
+          const evt = event.event;
+
+          // Track tool_use content block start
+          if (evt?.type === 'content_block_start' && evt.content_block?.type === 'tool_use') {
+            activeToolBlocks.set(evt.index, { name: evt.content_block.name, input: '' });
+          }
+
+          // Accumulate tool input JSON
+          if (evt?.type === 'content_block_delta' && evt.delta?.type === 'input_json_delta') {
+            const block = activeToolBlocks.get(evt.index);
+            if (block) {
+              block.input += evt.delta.partial_json;
+            }
+          }
+
+          // Emit completed tool_use block
+          if (evt?.type === 'content_block_stop') {
+            const block = activeToolBlocks.get(evt.index);
+            if (block) {
+              onToolUse?.(block.name, block.input);
+              activeToolBlocks.delete(evt.index);
+            }
+          }
+
+          // Stream text deltas
+          if (evt?.type === 'content_block_delta') {
+            const delta = evt.delta;
+            if (delta?.type === 'text_delta' && delta.text) {
+              hasStreamedText = true;
+              onText(delta.text);
+            }
           }
         }
+
         // Handle result type — only emit if we didn't already stream the text via deltas
         if (event.type === 'result' && event.result && !hasStreamedText) {
           const text = typeof event.result === 'string' ? event.result : event.result.text;
@@ -213,6 +246,7 @@ export async function runPlaygroundChat(
   onText: ChatOutputCallback,
   onStatus: StatusCallback,
   onSessionId: ChatSessionCallback,
+  onToolUse?: ToolUseCallback,
   resumeSessionId?: string,
   runId?: string,
 ): Promise<SkillRun> {
@@ -235,6 +269,7 @@ export async function runPlaygroundChat(
     onText,
     onError: (text) => onText(`[stderr] ${text}`),
     onStatus,
+    onToolUse,
     onStdoutEvent: (event) => {
       // Extract session ID from init or result events
       if (!sessionFound && event.session_id && (event.type === 'system' || event.type === 'result')) {

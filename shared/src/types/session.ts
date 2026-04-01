@@ -2,8 +2,9 @@ export type SessionType = 'chat' | 'single-run';
 export type SessionStatus = 'active' | 'completed' | 'failed';
 
 export interface SessionMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool_use';
   content: string;
+  toolName?: string;
   timestamp: string;
 }
 

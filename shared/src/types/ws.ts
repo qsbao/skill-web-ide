@@ -10,6 +10,7 @@ export type WsMessageType =
   | 'playground:chat:status'
   | 'playground:chat:session'
   | 'playground:chat:started'
+  | 'playground:chat:tool_use'
   | 'playground:single:output'
   | 'playground:single:status'
   | 'playground:single:started';

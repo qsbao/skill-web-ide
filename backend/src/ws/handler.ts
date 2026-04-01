@@ -161,6 +161,25 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
                 });
               }
             },
+            (toolName, toolInput) => {
+              socket.send(JSON.stringify({
+                type: 'playground:chat:tool_use',
+                payload: { runId, toolName, toolInput },
+              }));
+              // Persist tool_use message to session
+              if (activeInternalSessionId) {
+                sessionSetup.then(() => {
+                  return sessionService.addMessage(activeInternalSessionId!, {
+                    role: 'tool_use',
+                    content: toolInput,
+                    toolName,
+                    timestamp: new Date().toISOString(),
+                  });
+                }).catch((err) => {
+                  console.error(`[session] Failed to persist tool_use message:`, err);
+                });
+              }
+            },
             sessionId,
             runId,
           ).then((run) => {

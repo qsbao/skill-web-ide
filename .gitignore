@@ -6,3 +6,4 @@ skills-workspace/
 .DS_Store
 .claude/settings.local.json
 .playwright-cli
+tsconfig.tsbuildinfo

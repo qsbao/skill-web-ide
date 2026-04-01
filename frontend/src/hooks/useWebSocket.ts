@@ -16,6 +16,7 @@ export function useWebSocket() {
   } = useRunStore();
   const {
     appendToLastAssistant,
+    addToolUseMessage,
     setChatRunning,
     setSessionId,
     setInternalSessionId,
@@ -69,6 +70,9 @@ export function useWebSocket() {
           // Playground chat messages
           case 'playground:chat:text':
             appendToLastAssistant(msg.payload.text);
+            break;
+          case 'playground:chat:tool_use':
+            addToolUseMessage(msg.payload.toolName, msg.payload.toolInput);
             break;
           case 'playground:chat:status':
             if (msg.payload.status !== 'running') {
@@ -138,7 +142,7 @@ export function useWebSocket() {
   }, [
     addOutput, setRunning, setLastStatus,
     addRunOutput, setRunRunning, setRunLastStatus, setActiveRunId,
-    appendToLastAssistant, setChatRunning, setSessionId, setInternalSessionId,
+    appendToLastAssistant, addToolUseMessage, setChatRunning, setSessionId, setInternalSessionId,
     addSingleOutput, setSingleRunning, setSingleLastStatus, setSingleActiveRunId,
     setChatActiveRunId, setChatOutputFiles,
     loadSessions,
