@@ -68,7 +68,7 @@ export function AppShell() {
         <NavTabs />
 
         <div className="flex-1" />
-        <a
+        {/* <a
           href={FEEDBACK_URL}
           target="_blank"
           rel="noopener noreferrer"
@@ -77,7 +77,7 @@ export function AppShell() {
         >
           <MessageSquarePlus className="w-3.5 h-3.5" />
           Feedback
-        </a>
+        </a> */}
         <ThemeToggle />
       </header>
 

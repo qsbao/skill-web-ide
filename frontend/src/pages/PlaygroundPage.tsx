@@ -25,6 +25,23 @@ export function PlaygroundPage() {
   const { restoreSession } = usePlaygroundStore();
   const { fetchSession } = useSessionStore();
   const restoringRef = useRef(false);
+  // Track whether the initial ?skillId= clearing has happened,
+  // so we don't sync a stale session ID into the URL before clearChat() runs.
+  const skillInitRef = useRef(false);
+
+  // Pre-select skill from URL ?skillId=xxx (only when no sessionId):
+  // clear any existing session so the user starts fresh.
+  // This MUST run before the other effects to prevent stale session restoration.
+  useEffect(() => {
+    const skillId = searchParams.get('skillId');
+    if (skillId && !searchParams.get('sessionId')) {
+      clearChat();
+      setSelectedSkillId(skillId);
+      skillInitRef.current = true;
+    } else {
+      skillInitRef.current = false;
+    }
+  }, [searchParams, setSelectedSkillId, clearChat]);
 
   // Restore session from URL ?sessionId=xxx
   useEffect(() => {
@@ -39,21 +56,11 @@ export function PlaygroundPage() {
     }
   }, [searchParams, internalSessionId, fetchSession, restoreSession]);
 
-  // Pre-select skill from URL ?skillId=xxx (only when no sessionId):
-  // clear any existing session so the user starts fresh
-  useEffect(() => {
-    const skillId = searchParams.get('skillId');
-    if (skillId && !searchParams.get('sessionId')) {
-      clearChat();
-      setSelectedSkillId(skillId);
-    }
-  }, [searchParams, setSelectedSkillId, clearChat]);
-
-  // Sync internalSessionId to URL (skip when URL has skillId-only — user wants a fresh session)
+  // Sync internalSessionId to URL
   useEffect(() => {
     const currentSessionId = searchParams.get('sessionId');
-    const hasSkillIdOnly = searchParams.get('skillId') && !currentSessionId;
-    if (hasSkillIdOnly) return;
+    // If we just cleared for a ?skillId= navigation, don't sync stale session
+    if (!internalSessionId && skillInitRef.current) return;
     if (internalSessionId && internalSessionId !== currentSessionId) {
       navigate(buildPlaygroundUrl(selectedSkillId, internalSessionId), { replace: true });
     } else if (!internalSessionId && currentSessionId) {
