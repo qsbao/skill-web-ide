@@ -2,6 +2,8 @@ import { Outlet, useLocation, useParams, Link, NavLink } from 'react-router-dom'
 import { Blocks, LayoutDashboard, Code2, PlayCircle, MessageSquarePlus } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
+const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL || 'https://github.com/qsbao/skill-web-ide/issues/new/choose';
+
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/ide', label: 'IDE', icon: Code2 },
@@ -67,7 +69,7 @@ export function AppShell() {
 
         <div className="flex-1" />
         <a
-          href="https://github.com/qsbao/skill-web-ide/issues/new/choose"
+          href={FEEDBACK_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-theme-secondary hover:text-theme-primary hover:bg-surface-overlay/50 transition-all duration-150"
