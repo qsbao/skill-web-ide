@@ -13,7 +13,11 @@ export type WsMessageType =
   | 'playground:chat:tool_use'
   | 'playground:single:output'
   | 'playground:single:status'
-  | 'playground:single:started';
+  | 'playground:single:started'
+  | 'prompt-lab:run:progress'
+  | 'prompt-lab:run:complete'
+  | 'prompt-lab:opt:iteration'
+  | 'prompt-lab:opt:complete';
 
 export interface WsMessage {
   type: WsMessageType;

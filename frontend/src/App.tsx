@@ -6,6 +6,9 @@ import { IDEPage } from './pages/IDEPage';
 import { SkillDetailPage } from './pages/SkillDetailPage';
 import { PlaygroundPage } from './pages/PlaygroundPage';
 import { SessionsPage } from './pages/SessionsPage';
+import { PromptLabPage } from './pages/PromptLabPage';
+import { PromptProjectPage } from './pages/PromptProjectPage';
+import { PromptWorkspacePage } from './pages/PromptWorkspacePage';
 
 export function App() {
   return (
@@ -22,6 +25,9 @@ export function App() {
           <Route path="/ide/:author/:name" element={<IDEPage />} />
           <Route path="/ide" element={<IDEPage />} />
           <Route path="/playground" element={<PlaygroundPage />} />
+          <Route path="/prompt-lab" element={<PromptLabPage />} />
+          <Route path="/prompt-lab/:projectId" element={<PromptProjectPage />} />
+          <Route path="/prompt-lab/:projectId/:promptId" element={<PromptWorkspacePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

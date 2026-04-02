@@ -4,6 +4,9 @@ import * as testRunner from '../services/test-runner.service.js';
 import * as runService from '../services/run.service.js';
 import * as sessionService from '../services/session.service.js';
 import { getSkill } from '../services/skill.service.js';
+import { runTestSuite } from '../services/prompt-lab/runner.service.js';
+import { optimizePrompt } from '../services/prompt-lab/optimizer.service.js';
+import * as resultsService from '../services/prompt-lab/results.service.js';
 import type { TestType, WsMessage } from '@skill-ide/shared';
 
 export const wsHandler: FastifyPluginAsync = async (app) => {
@@ -249,6 +252,67 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             socket.send(JSON.stringify({
               type: 'playground:single:started',
               payload: run,
+            }));
+          }).catch((err) => {
+            socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
+          });
+        }
+        if (msg.action === 'prompt-lab:run') {
+          const { projectId, promptId, concurrency, repeatCount } = msg.payload as {
+            projectId: string;
+            promptId: string;
+            concurrency?: number;
+            repeatCount?: number;
+          };
+          const runId = uuid();
+
+          runTestSuite(
+            { projectId, promptId, concurrency, repeatCount },
+            {
+              onProgress: (progress) => {
+                socket.send(JSON.stringify({
+                  type: 'prompt-lab:run:progress',
+                  payload: { runId, ...progress },
+                }));
+              },
+            }
+          ).then(async (run) => {
+            await resultsService.saveTestRun(run);
+            socket.send(JSON.stringify({
+              type: 'prompt-lab:run:complete',
+              payload: { runId, run },
+            }));
+          }).catch((err) => {
+            socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
+          });
+        }
+
+        if (msg.action === 'prompt-lab:optimize') {
+          const { projectId, promptId, targetAccuracy, maxIterations, guidance } = msg.payload as {
+            projectId: string;
+            promptId: string;
+            targetAccuracy?: number;
+            maxIterations?: number;
+            guidance?: string;
+          };
+          const runId = uuid();
+
+          optimizePrompt({
+            projectId,
+            promptId,
+            targetAccuracy,
+            maxIterations,
+            guidance,
+            onIteration: (iteration) => {
+              socket.send(JSON.stringify({
+                type: 'prompt-lab:opt:iteration',
+                payload: { runId, iteration },
+              }));
+            },
+          }).then((job) => {
+            socket.send(JSON.stringify({
+              type: 'prompt-lab:opt:complete',
+              payload: { runId, job },
             }));
           }).catch((err) => {
             socket.send(JSON.stringify({ type: 'error', payload: String(err) }));

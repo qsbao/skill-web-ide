@@ -9,6 +9,7 @@ import { testRoutes } from './routes/tests.js';
 import { testCaseRoutes } from './routes/test-cases.js';
 import { runRoutes } from './routes/runs.js';
 import { sessionRoutes } from './routes/sessions.js';
+import { promptLabRoutes } from './routes/prompt-lab.js';
 import { wsHandler } from './ws/handler.js';
 import { initRepo } from './services/skill.service.js';
 import fs from 'node:fs/promises';
@@ -20,6 +21,7 @@ async function start() {
   await fs.mkdir(config.skillsDir, { recursive: true });
   await fs.mkdir(config.runsDir, { recursive: true });
   await fs.mkdir(config.sessionsDir, { recursive: true });
+  await fs.mkdir(config.promptLabDir, { recursive: true });
 
   // Init git repo in skills-workspace
   await initRepo();
@@ -35,6 +37,7 @@ async function start() {
   await app.register(testCaseRoutes, { prefix: '/api/skills' });
   await app.register(runRoutes, { prefix: '/api/skills' });
   await app.register(sessionRoutes, { prefix: '/api' });
+  await app.register(promptLabRoutes, { prefix: '/api/prompt-lab' });
   await app.register(wsHandler);
 
   await app.listen({ port: config.port, host: config.host });

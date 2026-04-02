@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useParams, Link, NavLink } from 'react-router-dom';
-import { Blocks, LayoutDashboard, Code2, PlayCircle, MessageSquarePlus } from 'lucide-react';
+import { Blocks, LayoutDashboard, Code2, PlayCircle, MessageSquarePlus, FlaskConical } from 'lucide-react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 const FEEDBACK_URL = import.meta.env.VITE_FEEDBACK_URL || 'https://github.com/qsbao/skill-web-ide/issues/new/choose';
@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/ide', label: 'IDE', icon: Code2 },
   { to: '/playground', label: 'Playground', icon: PlayCircle },
+  { to: '/prompt-lab', label: 'Prompt Lab', icon: FlaskConical },
 ];
 
 function NavTabs() {
