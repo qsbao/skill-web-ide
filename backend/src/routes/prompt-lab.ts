@@ -8,6 +8,7 @@ import { runTestSuite } from '../services/prompt-lab/runner.service.js';
 import { optimizePrompt } from '../services/prompt-lab/optimizer.service.js';
 import { updatePrompt } from '../services/prompt-lab/prompt.service.js';
 import { createJob, updateJob, getJob, listJobs } from '../services/prompt-lab/jobs.service.js';
+import { getLLMClient, getLLMModel } from '../services/prompt-lab/llm.service.js';
 import type { PromptOptimizationJob } from '@skill-ide/shared';
 
 const optimizationJobs = new Map<string, PromptOptimizationJob>();
@@ -15,6 +16,23 @@ const stopSignals = new Map<string, boolean>();
 const liveGuidance = new Map<string, string>();
 
 export async function promptLabRoutes(app: FastifyInstance) {
+  // ── Models ──
+
+  app.get('/models', async (_req, reply) => {
+    try {
+      const client = getLLMClient();
+      const list = await client.models.list();
+      const models: string[] = [];
+      for await (const m of list) {
+        models.push(m.id);
+      }
+      models.sort();
+      return { models, default: getLLMModel() };
+    } catch (err: any) {
+      return reply.status(502).send({ error: `Failed to fetch models: ${err.message}`, models: [], default: getLLMModel() });
+    }
+  });
+
   // ── Projects ──
 
   app.get('/projects', async () => {
@@ -141,14 +159,19 @@ export async function promptLabRoutes(app: FastifyInstance) {
       createJob(jobId, 'prompt-run');
       updateJob(jobId, { status: 'running' });
 
+      const partialResults: import('@skill-ide/shared').PromptTestCaseResult[] = [];
+
       (async () => {
         try {
           const run = await runTestSuite(
             { projectId: req.params.projectId, promptId: req.params.promptId, ...req.body },
-            { onProgress: p => updateJob(jobId, { progress: p }) }
+            { onProgress: p => {
+              if (p.latestResult) partialResults.push(p.latestResult);
+              updateJob(jobId, { progress: { ...p, latestResult: undefined }, partialResults });
+            } }
           );
           await resultsService.saveTestRun(run);
-          updateJob(jobId, { status: 'completed', result: run });
+          updateJob(jobId, { status: 'completed', result: run, partialResults: undefined });
         } catch (err: any) {
           updateJob(jobId, { status: 'failed', error: err.message });
         }

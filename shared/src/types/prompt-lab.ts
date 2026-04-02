@@ -69,6 +69,8 @@ export interface PromptTestCaseResult {
   outputContainCheck?: { keyword: string; found: boolean }[];
   latencyMs: number;
   tokenUsage?: { prompt: number; completion: number; total: number };
+  /** True when the case is queued but not yet evaluated */
+  pending?: boolean;
 }
 
 // ── Metrics ──
@@ -159,6 +161,7 @@ export interface PromptRunProgress {
   completed: number;
   total: number;
   currentCase: string;
+  latestResult?: PromptTestCaseResult;
 }
 
 // ── Async Job Tracking ──
@@ -168,6 +171,7 @@ export interface PromptLabJob<T = unknown> {
   type: 'prompt-run' | 'prompt-optimize';
   status: 'pending' | 'running' | 'completed' | 'failed' | 'stopped';
   progress?: PromptRunProgress;
+  partialResults?: PromptTestCaseResult[];
   result?: T;
   error?: string;
   createdAt: string;

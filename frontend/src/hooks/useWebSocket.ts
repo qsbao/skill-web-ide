@@ -3,6 +3,7 @@ import { useTestStore } from '../stores/testStore';
 import { useRunStore } from '../stores/runStore';
 import { usePlaygroundStore } from '../stores/playgroundStore';
 import { useSessionStore } from '../stores/sessionStore';
+import { usePromptLabStore } from '../stores/promptLabStore';
 import { api } from '../api/client';
 
 export function useWebSocket() {
@@ -119,12 +120,22 @@ export function useWebSocket() {
             setSingleRunning(true);
             setSingleActiveRunId(msg.payload.id);
             break;
+          // Prompt Lab run messages
+          case 'prompt-lab:run:progress':
+            usePromptLabStore.getState().wsRunProgress(msg.payload);
+            break;
+          case 'prompt-lab:run:complete': {
+            const { activePrompt, activeProject } = usePromptLabStore.getState();
+            usePromptLabStore.getState().wsRunComplete(msg.payload.run, activeProject?.id ?? '', activePrompt?.id ?? '');
+            break;
+          }
           case 'error':
             // Reset running states on error so UI isn't stuck
             setChatRunning(false);
             setSingleRunning(false);
             setSingleLastStatus('error');
             addSingleOutput({ stream: 'stderr', data: `[Error] ${msg.payload || 'Unknown error'}\n` });
+            usePromptLabStore.getState().wsRunError();
             break;
         }
       };

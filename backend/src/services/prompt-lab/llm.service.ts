@@ -28,10 +28,11 @@ export interface EvaluationResult {
 
 export async function evaluatePrompt(
   input: string,
-  prompt: string
+  prompt: string,
+  modelOverride?: string
 ): Promise<EvaluationResult> {
   const llm = getLLMClient();
-  const model = getLLMModel();
+  const model = modelOverride || getLLMModel();
   const startTime = Date.now();
 
   const controller = new AbortController();
@@ -41,7 +42,6 @@ export async function evaluatePrompt(
     const response = await llm.chat.completions.create(
       {
         model,
-        response_format: { type: 'json_object' },
         messages: [
           {
             role: 'system',

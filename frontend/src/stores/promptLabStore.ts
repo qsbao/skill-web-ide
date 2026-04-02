@@ -38,9 +38,15 @@ interface PromptLabState {
   // Runs
   runs: PromptTestRun[];
   activeJob: PromptLabJob | null;
+  liveResults: import('@skill-ide/shared').PromptTestCaseResult[];
+  runningViaWs: boolean;
   loadRuns: (projectId: string, promptId: string) => Promise<void>;
   startRun: (projectId: string, promptId: string) => Promise<string>;
   pollJob: (jobId: string, projectId: string, promptId: string) => Promise<void>;
+  wsRunStart: () => void;
+  wsRunProgress: (progress: { completed: number; total: number; currentCase: string; latestResult?: import('@skill-ide/shared').PromptTestCaseResult }) => void;
+  wsRunComplete: (run: PromptTestRun, projectId: string, promptId: string) => void;
+  wsRunError: () => void;
 
   // Optimization
   optimizationJob: PromptOptimizationJob | null;
@@ -127,6 +133,8 @@ export const usePromptLabStore = create<PromptLabState>((set, get) => ({
   // Runs
   runs: [],
   activeJob: null,
+  liveResults: [],
+  runningViaWs: false,
   loadRuns: async (projectId, promptId) => {
     const { recentRuns } = await api.promptLab.listRuns(projectId, promptId);
     set({ runs: recentRuns });
@@ -144,6 +152,40 @@ export const usePromptLabStore = create<PromptLabState>((set, get) => ({
     } else {
       set({ activeJob: job });
     }
+  },
+  wsRunStart: () => {
+    const { suite } = get();
+    const pending = (suite?.cases ?? []).map(c => ({
+      caseId: c.id,
+      input: c.input,
+      expectedPass: c.expected.pass,
+      actualPass: false,
+      correct: false,
+      issues: [],
+      suggestions: [],
+      latencyMs: 0,
+      pending: true,
+    }));
+    set({ runningViaWs: true, liveResults: pending, activeJob: { id: '', type: 'prompt-run', status: 'running', createdAt: new Date().toISOString() } });
+  },
+  wsRunProgress: (progress) => {
+    const { liveResults } = get();
+    let next = liveResults;
+    if (progress.latestResult) {
+      // Replace the pending placeholder with the real result
+      next = liveResults.map(r => r.caseId === progress.latestResult!.caseId ? progress.latestResult! : r);
+    }
+    set({
+      liveResults: next,
+      activeJob: { id: '', type: 'prompt-run', status: 'running', progress: { completed: progress.completed, total: progress.total, currentCase: progress.currentCase }, createdAt: new Date().toISOString() },
+    });
+  },
+  wsRunComplete: (run, projectId, promptId) => {
+    set({ runningViaWs: false, liveResults: [], activeJob: null });
+    get().loadRuns(projectId, promptId);
+  },
+  wsRunError: () => {
+    set({ runningViaWs: false, liveResults: [], activeJob: null });
   },
 
   // Optimization

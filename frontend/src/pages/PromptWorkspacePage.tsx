@@ -1,6 +1,5 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { PromptEditor } from '../components/prompt-lab/PromptEditor';
 import { TestSuiteEditor } from '../components/prompt-lab/TestSuiteEditor';
@@ -11,32 +10,28 @@ import { usePromptLabStore } from '../stores/promptLabStore';
 export function PromptWorkspacePage() {
   const { projectId, promptId } = useParams<{ projectId: string; promptId: string }>();
   const navigate = useNavigate();
-  const { activeProject, activePrompt, setActiveProject, setActivePrompt, loadProjects, projects, loadPrompts, loadSuite, loadRuns } = usePromptLabStore();
+  const { activeProject, activePrompt, loadProjects, loadPrompts, loadSuite, loadRuns } = usePromptLabStore();
 
   useEffect(() => {
     if (!projectId || !promptId) return;
 
+    // Load metadata first, then data — avoid setActiveProject/setActivePrompt
+    // which reset suite/runs state. Instead, set them inline without wiping.
     loadProjects().then(() => {
-      loadPrompts(projectId);
+      const { projects: ps } = usePromptLabStore.getState();
+      const project = ps.find(p => p.id === projectId);
+      if (project && usePromptLabStore.getState().activeProject?.id !== projectId) {
+        usePromptLabStore.setState({ activeProject: project });
+      }
+      loadPrompts(projectId).then(() => {
+        const { prompts: prs } = usePromptLabStore.getState();
+        const prompt = prs.find(p => p.id === promptId);
+        if (prompt) usePromptLabStore.setState({ activePrompt: prompt });
+      });
     });
     loadSuite(projectId, promptId);
     loadRuns(projectId, promptId);
   }, [projectId, promptId]);
-
-  useEffect(() => {
-    if (projectId && projects.length > 0) {
-      const project = projects.find(p => p.id === projectId);
-      if (project) setActiveProject(project);
-    }
-  }, [projectId, projects]);
-
-  const { prompts } = usePromptLabStore();
-  useEffect(() => {
-    if (promptId && prompts.length > 0) {
-      const prompt = prompts.find(p => p.id === promptId);
-      if (prompt) setActivePrompt(prompt);
-    }
-  }, [promptId, prompts]);
 
   if (!projectId || !promptId) return null;
 

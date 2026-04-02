@@ -119,6 +119,9 @@ export const api = {
 
   // ── Prompt Lab ──
   promptLab: {
+    // Models
+    listModels: () => request<{ models: string[]; default: string }>('/prompt-lab/models'),
+
     // Projects
     listProjects: () => request<any[]>('/prompt-lab/projects'),
     createProject: (data: { name: string; description?: string }) =>

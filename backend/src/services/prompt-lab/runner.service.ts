@@ -39,10 +39,11 @@ export async function runTestSuite(
   if (suite.cases.length === 0) throw new Error(`No test cases for ${promptId}`);
 
   const promptText = promptOverride ?? promptRecord.prompt;
+  const model = promptRecord.model || getLLMModel();
   const allRepeatResults: PromptTestCaseResult[][] = [];
 
   for (let rep = 0; rep < repeatCount; rep++) {
-    const results = await runSingleSuite(suite, promptText, concurrency, callbacks?.onProgress);
+    const results = await runSingleSuite(suite, promptText, model, concurrency, callbacks?.onProgress);
     allRepeatResults.push(results);
   }
 
@@ -64,7 +65,7 @@ export async function runTestSuite(
     promptSnapshot: promptText,
     promptHash,
     suiteHash,
-    model: getLLMModel(),
+    model,
     results: primaryResults,
     metrics,
   };
@@ -73,6 +74,7 @@ export async function runTestSuite(
 async function runSingleSuite(
   suite: PromptTestSuite,
   prompt: string,
+  model: string,
   concurrency: number,
   onProgress?: (progress: PromptRunProgress) => void
 ): Promise<PromptTestCaseResult[]> {
@@ -84,17 +86,14 @@ async function runSingleSuite(
     limit(async (): Promise<PromptTestCaseResult> => {
       onProgress?.({ completed, total, currentCase: testCase.id });
 
-      const result = await withRetry(() => evaluatePrompt(testCase.input, prompt));
+      const result = await withRetry(() => evaluatePrompt(testCase.input, prompt, model));
 
       const outputContainCheck = testCase.expected.outputMustContain?.map(keyword => ({
         keyword,
         found: result.issues.some(issue => issue.toLowerCase().includes(keyword.toLowerCase())),
       }));
 
-      completed++;
-      onProgress?.({ completed, total, currentCase: testCase.id });
-
-      return {
+      const caseResult: PromptTestCaseResult = {
         caseId: testCase.id,
         input: testCase.input,
         expectedPass: testCase.expected.pass,
@@ -107,6 +106,11 @@ async function runSingleSuite(
         latencyMs: result.latencyMs,
         tokenUsage: result.tokenUsage,
       };
+
+      completed++;
+      onProgress?.({ completed, total, currentCase: testCase.id, latestResult: caseResult });
+
+      return caseResult;
     })
   );
 

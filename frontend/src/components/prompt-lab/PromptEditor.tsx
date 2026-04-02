@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Save, Settings } from 'lucide-react';
 import { usePromptLabStore } from '../../stores/promptLabStore';
+import { api } from '../../api/client';
 
 interface Props {
   projectId: string;
@@ -14,6 +15,17 @@ export function PromptEditor({ projectId, promptId }: Props) {
   const [model, setModel] = useState('');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [defaultModel, setDefaultModel] = useState('');
+
+  useEffect(() => {
+    api.promptLab.listModels()
+      .then(({ models, default: def }) => {
+        setAvailableModels(models);
+        setDefaultModel(def);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (activePrompt) {
@@ -80,12 +92,16 @@ export function PromptEditor({ projectId, promptId }: Props) {
         {/* Model */}
         <div>
           <label className="text-[10px] uppercase tracking-wider text-theme-muted mb-1 block">Model</label>
-          <input
+          <select
             className="input-base w-full text-xs"
-            placeholder="gpt-4o-mini (default from env)"
             value={model}
             onChange={e => { setModel(e.target.value); setDirty(true); }}
-          />
+          >
+            <option value="">Default ({defaultModel || 'from env'})</option>
+            {availableModels.map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
         </div>
 
         {/* Prompt text */}

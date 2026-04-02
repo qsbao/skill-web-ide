@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Loader2, Clock, GitCompare } from 'lucide-react';
 import { usePromptLabStore } from '../../stores/promptLabStore';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { MetricsCard } from './MetricsCard';
 import { RunResultsTable } from './RunResultsTable';
 import type { PromptTestRun } from '@skill-ide/shared';
@@ -13,10 +14,10 @@ interface Props {
 type Tab = 'results' | 'history' | 'compare';
 
 export function RunDashboard({ projectId, promptId }: Props) {
-  const { runs, activeJob, startRun, pollJob, loadRuns, selectedRunIds, toggleRunSelection, compareSelectedRuns, comparison, clearComparison } = usePromptLabStore();
+  const { runs, activeJob, liveResults, loadRuns, selectedRunIds, toggleRunSelection, compareSelectedRuns, comparison, clearComparison, wsRunStart } = usePromptLabStore();
+  const { sendMessage } = useWebSocket();
   const [tab, setTab] = useState<Tab>('results');
   const [selectedRun, setSelectedRun] = useState<PromptTestRun | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Auto-select latest run
   useEffect(() => {
@@ -25,29 +26,20 @@ export function RunDashboard({ projectId, promptId }: Props) {
     }
   }, [runs]);
 
-  const handleRun = async () => {
-    const jobId = await startRun(projectId, promptId);
-    // Poll for completion
-    pollRef.current = setInterval(async () => {
-      await pollJob(jobId, projectId, promptId);
-    }, 1000);
-  };
-
-  // Stop polling when job completes
+  // When run completes via WS, select the latest run
   useEffect(() => {
-    if (!activeJob && pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-      // Refresh and select latest
-      loadRuns(projectId, promptId).then(() => {
-        const { runs: latestRuns } = usePromptLabStore.getState();
-        if (latestRuns.length > 0) setSelectedRun(latestRuns[0]);
-      });
+    if (!activeJob && runs.length > 0 && liveResults.length === 0) {
+      setSelectedRun(runs[0]);
     }
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [activeJob]);
+  }, [activeJob, runs]);
+
+  const handleRun = () => {
+    // Clear previous results and switch to results tab
+    setSelectedRun(null);
+    setTab('results');
+    wsRunStart();
+    sendMessage('prompt-lab:run', { projectId, promptId });
+  };
 
   const handleCompare = async () => {
     await compareSelectedRuns(projectId, promptId);
@@ -97,13 +89,26 @@ export function RunDashboard({ projectId, promptId }: Props) {
       <div className="flex-1 overflow-y-auto">
         {tab === 'results' && (
           <div>
-            {selectedRun ? (
+            {activeJob && liveResults.length > 0 ? (
+              <>
+                <div className="px-3 py-2 text-xs text-theme-muted flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Running... {activeJob.progress ? `${activeJob.progress.completed}/${activeJob.progress.total}` : ''}
+                </div>
+                <RunResultsTable results={liveResults} />
+              </>
+            ) : selectedRun ? (
               <>
                 <div className="p-3">
                   <MetricsCard metrics={selectedRun.metrics} />
                 </div>
                 <RunResultsTable results={selectedRun.results} />
               </>
+            ) : activeJob ? (
+              <div className="flex items-center justify-center h-32 text-xs text-theme-muted gap-2">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Starting run...
+              </div>
             ) : (
               <div className="flex items-center justify-center h-full text-xs text-theme-muted">
                 Run tests to see results.

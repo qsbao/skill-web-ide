@@ -272,7 +272,7 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
               onProgress: (progress) => {
                 socket.send(JSON.stringify({
                   type: 'prompt-lab:run:progress',
-                  payload: { runId, ...progress },
+                  payload: { runId, completed: progress.completed, total: progress.total, currentCase: progress.currentCase, latestResult: progress.latestResult },
                 }));
               },
             }
