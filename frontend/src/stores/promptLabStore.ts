@@ -99,8 +99,7 @@ export const usePromptLabStore = create<PromptLabState>((set, get) => ({
     return prompt;
   },
   updatePrompt: async (projectId, promptId, data) => {
-    await api.promptLab.updatePrompt(projectId, promptId, data);
-    const updated = await api.promptLab.getPrompt(projectId, promptId);
+    const updated = await api.promptLab.updatePrompt(projectId, promptId, data);
     set({ activePrompt: updated });
     await get().loadPrompts(projectId);
   },

@@ -37,8 +37,10 @@ export function MetricsCard({ metrics }: Props) {
       <MetricBar label="Recall" value={metrics.recall} color="bg-amber-400" />
       <MetricBar label="F1" value={metrics.f1} color="bg-purple-400" />
 
-      <div className="flex gap-4 text-[10px] text-theme-muted pt-1">
+      <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[10px] text-theme-muted pt-1">
         <span>Avg latency: {Math.round(metrics.avgLatencyMs)}ms</span>
+        <span>Total time: {(metrics.totalLatencyMs / 1000).toFixed(1)}s</span>
+        {metrics.totalTokens > 0 && <span>Tokens: {metrics.totalTokens.toLocaleString()}</span>}
         {metrics.consistency !== undefined && (
           <span>Consistency: {Math.round(metrics.consistency * 100)}%</span>
         )}

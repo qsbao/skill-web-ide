@@ -64,6 +64,7 @@ export async function runTestSuite(
     promptId,
     promptSnapshot: promptText,
     promptHash,
+    promptVersion: promptRecord.version,
     suiteHash,
     model,
     results: primaryResults,
@@ -88,21 +89,44 @@ async function runSingleSuite(
 
       const result = await withRetry(() => evaluatePrompt(testCase.input, prompt, model));
 
+      const rawOutput = result.rawOutput ?? '';
       const outputContainCheck = testCase.expected.outputMustContain?.map(keyword => ({
         keyword,
-        found: result.issues.some(issue => issue.toLowerCase().includes(keyword.toLowerCase())),
+        found: rawOutput.toLowerCase().includes(keyword.toLowerCase()),
       }));
+
+      const outputNotContainCheck = testCase.expected.outputMustNotContain?.map(keyword => ({
+        keyword,
+        found: rawOutput.toLowerCase().includes(keyword.toLowerCase()),
+      }));
+
+      let regexMatch: boolean | undefined;
+      if (testCase.expected.outputMatchRegex) {
+        try {
+          regexMatch = new RegExp(testCase.expected.outputMatchRegex).test(rawOutput);
+        } catch {
+          regexMatch = false;
+        }
+      }
+
+      // Determine correctness: base pass/fail + output checks
+      let correct = testCase.expected.pass === result.pass;
+      if (correct && outputContainCheck?.some(c => !c.found)) correct = false;
+      if (correct && outputNotContainCheck?.some(c => c.found)) correct = false;
+      if (correct && regexMatch === false) correct = false;
 
       const caseResult: PromptTestCaseResult = {
         caseId: testCase.id,
         input: testCase.input,
         expectedPass: testCase.expected.pass,
         actualPass: result.pass,
-        correct: testCase.expected.pass === result.pass,
+        correct,
         issues: result.issues,
         suggestions: result.suggestions,
         rawOutput: result.rawOutput,
         outputContainCheck,
+        outputNotContainCheck,
+        regexMatch,
         latencyMs: result.latencyMs,
         tokenUsage: result.tokenUsage,
       };

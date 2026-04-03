@@ -52,14 +52,16 @@ export async function loadRunById(projectId: string, promptId: string, runId: st
 export function computeMetrics(results: PromptTestCaseResult[]): PromptMetrics {
   const total = results.length;
   if (total === 0) {
-    return { accuracy: 0, precision: 0, recall: 0, f1: 0, totalCases: 0, passExpected: 0, failExpected: 0, avgLatencyMs: 0 };
+    return { accuracy: 0, precision: 0, recall: 0, f1: 0, totalCases: 0, passExpected: 0, failExpected: 0, avgLatencyMs: 0, totalLatencyMs: 0, totalTokens: 0 };
   }
 
   let tp = 0, fp = 0, fn = 0, tn = 0;
   let totalLatency = 0;
+  let totalTokens = 0;
 
   for (const r of results) {
     totalLatency += r.latencyMs;
+    totalTokens += r.tokenUsage?.total ?? 0;
     if (r.expectedPass && r.actualPass) tp++;
     else if (!r.expectedPass && r.actualPass) fp++;
     else if (r.expectedPass && !r.actualPass) fn++;
@@ -80,6 +82,8 @@ export function computeMetrics(results: PromptTestCaseResult[]): PromptMetrics {
     passExpected: tp + fn,
     failExpected: fp + tn,
     avgLatencyMs: totalLatency / total,
+    totalLatencyMs: totalLatency,
+    totalTokens,
   };
 }
 
@@ -110,6 +114,7 @@ export function compareMultipleRuns(runs: PromptTestRun[]): PromptRunComparison 
     runId: r.id,
     timestamp: r.timestamp,
     suiteHash: r.suiteHash,
+    promptVersion: r.promptVersion,
     metrics: r.metrics,
     prompt: r.promptSnapshot,
     results: r.results,

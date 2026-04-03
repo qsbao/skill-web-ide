@@ -258,16 +258,17 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
           });
         }
         if (msg.action === 'prompt-lab:run') {
-          const { projectId, promptId, concurrency, repeatCount } = msg.payload as {
+          const { projectId, promptId, concurrency, repeatCount, promptOverride } = msg.payload as {
             projectId: string;
             promptId: string;
             concurrency?: number;
             repeatCount?: number;
+            promptOverride?: string;
           };
           const runId = uuid();
 
           runTestSuite(
-            { projectId, promptId, concurrency, repeatCount },
+            { projectId, promptId, concurrency, repeatCount, promptOverride },
             {
               onProgress: (progress) => {
                 socket.send(JSON.stringify({
@@ -296,6 +297,35 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             guidance?: string;
           };
           const runId = uuid();
+          let lastIterCount = 0;
+
+          // Create a shared job object for live updates
+          const optJob: import('@skill-ide/shared').PromptOptimizationJob = {
+            id: runId,
+            projectId,
+            promptId,
+            status: 'running',
+            targetAccuracy: targetAccuracy ?? 0.95,
+            maxIterations: maxIterations ?? 10,
+            guidance: guidance ?? '',
+            liveGuidance: [],
+            iterations: [],
+            bestIteration: 0,
+            startedAt: new Date().toISOString(),
+          };
+
+          // Poll for new iterations and send via WS
+          const pollInterval = setInterval(() => {
+            if (optJob.iterations.length > lastIterCount) {
+              for (let idx = lastIterCount; idx < optJob.iterations.length; idx++) {
+                socket.send(JSON.stringify({
+                  type: 'prompt-lab:opt:iteration',
+                  payload: { runId, iteration: optJob.iterations[idx] },
+                }));
+              }
+              lastIterCount = optJob.iterations.length;
+            }
+          }, 1000);
 
           optimizePrompt({
             projectId,
@@ -303,18 +333,15 @@ export const wsHandler: FastifyPluginAsync = async (app) => {
             targetAccuracy,
             maxIterations,
             guidance,
-            onIteration: (iteration) => {
-              socket.send(JSON.stringify({
-                type: 'prompt-lab:opt:iteration',
-                payload: { runId, iteration },
-              }));
-            },
+            job: optJob,
           }).then((job) => {
+            clearInterval(pollInterval);
             socket.send(JSON.stringify({
               type: 'prompt-lab:opt:complete',
               payload: { runId, job },
             }));
           }).catch((err) => {
+            clearInterval(pollInterval);
             socket.send(JSON.stringify({ type: 'error', payload: String(err) }));
           });
         }

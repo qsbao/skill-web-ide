@@ -67,7 +67,20 @@ export async function promptLabRoutes(app: FastifyInstance) {
   // ── Prompts ──
 
   app.get<{ Params: { projectId: string } }>('/projects/:projectId/prompts', async (req) => {
-    return promptService.listPrompts(req.params.projectId);
+    const prompts = await promptService.listPrompts(req.params.projectId);
+    // Attach latest run metrics to each prompt
+    const enriched = await Promise.all(
+      prompts.map(async (p) => {
+        const runs = await resultsService.loadAllRuns(req.params.projectId, p.id);
+        const latestRun = runs[0]; // sorted newest first
+        return {
+          ...p,
+          latestMetrics: latestRun?.metrics ?? null,
+          latestRunTimestamp: latestRun?.timestamp ?? null,
+        };
+      })
+    );
+    return enriched;
   });
 
   app.post<{ Params: { projectId: string }; Body: { name: string; description?: string; prompt?: string; model?: string } }>(
@@ -87,11 +100,20 @@ export async function promptLabRoutes(app: FastifyInstance) {
     }
   );
 
-  app.put<{ Params: { projectId: string; promptId: string }; Body: { name?: string; description?: string; prompt?: string; model?: string } }>(
+  app.put<{ Params: { projectId: string; promptId: string }; Body: { name?: string; description?: string; prompt?: string; model?: string; bumpMajor?: boolean; majorDescription?: string } }>(
     '/projects/:projectId/prompts/:promptId',
     async (req, reply) => {
       const prompt = await promptService.updatePrompt(req.params.projectId, req.params.promptId, req.body);
       if (!prompt) return reply.status(404).send({ error: 'Prompt not found' });
+      return prompt;
+    }
+  );
+
+  app.post<{ Params: { projectId: string; promptId: string }; Body: { version: string } }>(
+    '/projects/:projectId/prompts/:promptId/restore',
+    async (req, reply) => {
+      const prompt = await promptService.restoreVersion(req.params.projectId, req.params.promptId, req.body.version);
+      if (!prompt) return reply.status(404).send({ error: 'Version not found' });
       return prompt;
     }
   );
@@ -101,6 +123,42 @@ export async function promptLabRoutes(app: FastifyInstance) {
     async (req, reply) => {
       await promptService.deletePrompt(req.params.projectId, req.params.promptId);
       return reply.status(204).send();
+    }
+  );
+
+  // ── Export ──
+
+  app.get<{ Params: { projectId: string; promptId: string } }>(
+    '/projects/:projectId/prompts/:promptId/export',
+    async (req, reply) => {
+      const prompt = await promptService.getPrompt(req.params.projectId, req.params.promptId);
+      if (!prompt) return reply.status(404).send({ error: 'Prompt not found' });
+
+      const suite = await suiteService.loadSuite(req.params.projectId, req.params.promptId);
+      const runs = await resultsService.loadAllRuns(req.params.projectId, req.params.promptId);
+
+      return {
+        prompt: {
+          name: prompt.name,
+          description: prompt.description,
+          prompt: prompt.prompt,
+          model: prompt.model,
+          version: prompt.version,
+          versions: prompt.versions,
+        },
+        testSuite: {
+          description: suite.description,
+          cases: suite.cases,
+        },
+        runs: runs.slice(0, 20).map(r => ({
+          id: r.id,
+          timestamp: r.timestamp,
+          promptVersion: r.promptVersion,
+          model: r.model,
+          metrics: r.metrics,
+        })),
+        exportedAt: new Date().toISOString(),
+      };
     }
   );
 
@@ -124,7 +182,7 @@ export async function promptLabRoutes(app: FastifyInstance) {
     }
   );
 
-  app.post<{ Params: { projectId: string; promptId: string }; Body: { description: string; input: string; expected: { pass: boolean; outputMustContain?: string[] } } }>(
+  app.post<{ Params: { projectId: string; promptId: string }; Body: { description: string; input: string; expected: { pass: boolean; outputMustContain?: string[]; outputMustNotContain?: string[]; outputMatchRegex?: string } } }>(
     '/projects/:projectId/prompts/:promptId/suite/cases',
     async (req, reply) => {
       const testCase = await suiteService.addCase(req.params.projectId, req.params.promptId, req.body);
@@ -132,7 +190,7 @@ export async function promptLabRoutes(app: FastifyInstance) {
     }
   );
 
-  app.put<{ Params: { projectId: string; promptId: string; caseId: string }; Body: { description?: string; input?: string; expected?: { pass: boolean; outputMustContain?: string[] } } }>(
+  app.put<{ Params: { projectId: string; promptId: string; caseId: string }; Body: { description?: string; input?: string; expected?: { pass: boolean; outputMustContain?: string[]; outputMustNotContain?: string[]; outputMatchRegex?: string } } }>(
     '/projects/:projectId/prompts/:promptId/suite/cases/:caseId',
     async (req, reply) => {
       const testCase = await suiteService.updateCase(req.params.projectId, req.params.promptId, req.params.caseId, req.body);
@@ -231,7 +289,7 @@ export async function promptLabRoutes(app: FastifyInstance) {
       updateJob(jobId, { status: 'running' });
       stopSignals.set(jobId, false);
 
-      optimizationJobs.set(jobId, {
+      const optJob: PromptOptimizationJob = {
         id: jobId,
         projectId,
         promptId,
@@ -243,7 +301,8 @@ export async function promptLabRoutes(app: FastifyInstance) {
         iterations: [],
         bestIteration: 0,
         startedAt: new Date().toISOString(),
-      });
+      };
+      optimizationJobs.set(jobId, optJob);
 
       (async () => {
         try {
@@ -251,16 +310,15 @@ export async function promptLabRoutes(app: FastifyInstance) {
             projectId,
             promptId,
             ...req.body,
-            onIteration: iter => {
-              const current = optimizationJobs.get(jobId);
-              if (current) current.iterations.push(iter);
-            },
+            job: optJob, // pass the shared job object to mutate directly
             shouldStop: () => stopSignals.get(jobId) === true,
             getGuidance: () => liveGuidance.get(jobId) ?? '',
           });
           optimizationJobs.set(jobId, result);
           updateJob(jobId, { status: result.status, result });
         } catch (err: any) {
+          const current = optimizationJobs.get(jobId);
+          if (current) current.status = 'failed';
           updateJob(jobId, { status: 'failed', error: err.message });
         }
       })();

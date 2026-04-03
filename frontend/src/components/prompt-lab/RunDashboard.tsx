@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Loader2, Clock, GitCompare } from 'lucide-react';
+import { Play, Loader2, Clock, GitCompare, RotateCcw } from 'lucide-react';
 import { usePromptLabStore } from '../../stores/promptLabStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { MetricsCard } from './MetricsCard';
@@ -33,12 +33,12 @@ export function RunDashboard({ projectId, promptId }: Props) {
     }
   }, [activeJob, runs]);
 
-  const handleRun = () => {
+  const handleRun = (promptOverride?: string) => {
     // Clear previous results and switch to results tab
     setSelectedRun(null);
     setTab('results');
     wsRunStart();
-    sendMessage('prompt-lab:run', { projectId, promptId });
+    sendMessage('prompt-lab:run', { projectId, promptId, promptOverride });
   };
 
   const handleCompare = async () => {
@@ -68,7 +68,7 @@ export function RunDashboard({ projectId, promptId }: Props) {
           ))}
         </div>
         <button
-          onClick={handleRun}
+          onClick={() => handleRun()}
           disabled={!!activeJob}
           className="btn-primary btn-xs"
         >
@@ -119,6 +119,14 @@ export function RunDashboard({ projectId, promptId }: Props) {
 
         {tab === 'history' && (
           <div className="divide-y divide-border-subtle">
+            {selectedRunIds.length >= 2 && (
+              <div className="p-2 bg-surface-overlay/30">
+                <button onClick={handleCompare} className="btn-secondary btn-xs w-full">
+                  <GitCompare className="w-3 h-3" />
+                  Compare {selectedRunIds.length} runs
+                </button>
+              </div>
+            )}
             {runs.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-xs text-theme-muted">
                 No runs yet.
@@ -137,26 +145,28 @@ export function RunDashboard({ projectId, promptId }: Props) {
                     className="shrink-0"
                     onClick={e => e.stopPropagation()}
                   />
+                  <button
+                    onClick={e => { e.stopPropagation(); handleRun(run.promptSnapshot); }}
+                    disabled={!!activeJob}
+                    className="p-0.5 rounded hover:bg-surface-overlay/50 text-theme-muted hover:text-theme-accent transition-all shrink-0"
+                    title="Re-run with this prompt version"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                  </button>
                   <Clock className="w-3 h-3 text-theme-muted shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-theme-primary">
                       {Math.round(run.metrics.accuracy * 100)}% accuracy
                       <span className="text-theme-muted ml-2">F1: {Math.round(run.metrics.f1 * 100)}%</span>
+                      <span className="text-theme-muted ml-2">{(run.metrics.totalLatencyMs / 1000).toFixed(1)}s</span>
                     </div>
                     <div className="text-[10px] text-theme-muted">
                       {new Date(run.timestamp).toLocaleString()} &middot; {run.model}
+                      {run.promptVersion && <span className="ml-1 font-mono text-theme-accent/70">v{run.promptVersion}</span>}
                     </div>
                   </div>
                 </div>
               ))
-            )}
-            {selectedRunIds.length >= 2 && (
-              <div className="p-3">
-                <button onClick={handleCompare} className="btn-secondary btn-xs w-full">
-                  <GitCompare className="w-3 h-3" />
-                  Compare {selectedRunIds.length} runs
-                </button>
-              </div>
             )}
           </div>
         )}
@@ -169,11 +179,35 @@ export function RunDashboard({ projectId, promptId }: Props) {
                 <div className="grid grid-cols-2 gap-2">
                   {comparison.runs.map(run => (
                     <div key={run.runId} className="p-2 rounded bg-surface-inset text-xs space-y-1">
-                      <div className="font-medium text-theme-primary">{Math.round(run.metrics.accuracy * 100)}% acc</div>
+                      <div className="font-medium text-theme-primary">
+                        {Math.round(run.metrics.accuracy * 100)}% acc
+                        {run.promptVersion && <span className="ml-1 font-mono text-theme-accent/70">v{run.promptVersion}</span>}
+                      </div>
                       <div className="text-[10px] text-theme-muted">{new Date(run.timestamp).toLocaleString()}</div>
+                      <div className="text-[10px] text-theme-muted">
+                        {(run.metrics.totalLatencyMs / 1000).toFixed(1)}s
+                        {run.metrics.totalTokens > 0 && <span className="ml-2">{run.metrics.totalTokens.toLocaleString()} tokens</span>}
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Prompt diff (if prompts differ between runs) */}
+                {comparison.runs.length >= 2 && comparison.runs[0].prompt !== comparison.runs[1].prompt && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-wider text-theme-muted">Prompt Diff</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {comparison.runs.map(run => (
+                        <div key={run.runId} className="rounded bg-surface-inset p-2 max-h-32 overflow-y-auto">
+                          <div className="text-[10px] text-theme-muted mb-1 font-mono">
+                            {run.promptVersion ? `v${run.promptVersion}` : run.runId.slice(0, 8)}
+                          </div>
+                          <pre className="text-[10px] text-theme-secondary font-mono whitespace-pre-wrap">{run.prompt}</pre>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Case-by-case comparison */}
                 <div className="divide-y divide-border-subtle">

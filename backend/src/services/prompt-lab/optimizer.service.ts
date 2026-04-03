@@ -98,7 +98,7 @@ export interface OptimizeOptions {
   targetAccuracy?: number;
   maxIterations?: number;
   guidance?: string;
-  onIteration?: (iteration: PromptOptimizationIteration) => void;
+  job?: PromptOptimizationJob; // shared job object to mutate for live polling
   shouldStop?: () => boolean;
   getGuidance?: () => string;
 }
@@ -110,7 +110,6 @@ export async function optimizePrompt(options: OptimizeOptions): Promise<PromptOp
     targetAccuracy = 0.95,
     maxIterations = 10,
     guidance = '',
-    onIteration,
     shouldStop,
     getGuidance,
   } = options;
@@ -121,7 +120,8 @@ export async function optimizePrompt(options: OptimizeOptions): Promise<PromptOp
   const suite = await loadSuite(projectId, promptId);
   if (suite.cases.length === 0) throw new Error(`No test cases for ${promptId}`);
 
-  const job: PromptOptimizationJob = {
+  // Use the shared job if provided, otherwise create a new one
+  const job: PromptOptimizationJob = options.job ?? {
     id: crypto.randomUUID(),
     projectId,
     promptId,
@@ -172,7 +172,7 @@ export async function optimizePrompt(options: OptimizeOptions): Promise<PromptOp
       if (metrics.accuracy >= targetAccuracy) {
         iteration.failureAnalysis = 'Target accuracy reached.';
         job.iterations.push(iteration);
-        onIteration?.(iteration);
+        job.bestIteration = job.iterations.length - 1;
         job.status = 'completed';
         break;
       }
@@ -212,11 +212,11 @@ export async function optimizePrompt(options: OptimizeOptions): Promise<PromptOp
         : undefined;
 
       job.iterations.push(iteration);
-      onIteration?.(iteration);
+      const iterIdx = job.iterations.length - 1;
 
       const bestMetrics = job.iterations[job.bestIteration].metrics;
       if (metrics.accuracy > bestMetrics.accuracy) {
-        job.bestIteration = i;
+        job.bestIteration = iterIdx;
         noImprovementCount = 0;
       } else {
         noImprovementCount++;

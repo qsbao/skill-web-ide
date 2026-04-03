@@ -139,10 +139,14 @@ export const api = {
       request<any>(`/prompt-lab/projects/${projectId}/prompts`, { method: 'POST', body: JSON.stringify(data) }),
     getPrompt: (projectId: string, promptId: string) =>
       request<any>(`/prompt-lab/projects/${projectId}/prompts/${promptId}`),
-    updatePrompt: (projectId: string, promptId: string, data: { name?: string; description?: string; prompt?: string; model?: string }) =>
+    updatePrompt: (projectId: string, promptId: string, data: { name?: string; description?: string; prompt?: string; model?: string; bumpMajor?: boolean; majorDescription?: string }) =>
       request<any>(`/prompt-lab/projects/${projectId}/prompts/${promptId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    restoreVersion: (projectId: string, promptId: string, version: string) =>
+      request<any>(`/prompt-lab/projects/${projectId}/prompts/${promptId}/restore`, { method: 'POST', body: JSON.stringify({ version }) }),
     deletePrompt: (projectId: string, promptId: string) =>
       request<void>(`/prompt-lab/projects/${projectId}/prompts/${promptId}`, { method: 'DELETE' }),
+    exportPrompt: (projectId: string, promptId: string) =>
+      request<any>(`/prompt-lab/projects/${projectId}/prompts/${promptId}/export`),
 
     // Test Suite
     getSuite: (projectId: string, promptId: string) =>

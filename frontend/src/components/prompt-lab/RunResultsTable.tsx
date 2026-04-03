@@ -110,6 +110,35 @@ export function RunResultsTable({ results }: Props) {
                       </ul>
                     </div>
                   )}
+                  {r.outputContainCheck && r.outputContainCheck.length > 0 && (
+                    <div>
+                      <span className="text-[10px] uppercase text-theme-muted">Must Contain</span>
+                      <div className="mt-0.5 flex flex-wrap gap-1">
+                        {r.outputContainCheck.map((c, i) => (
+                          <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${c.found ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                            {c.keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {r.outputNotContainCheck && r.outputNotContainCheck.length > 0 && (
+                    <div>
+                      <span className="text-[10px] uppercase text-theme-muted">Must NOT Contain</span>
+                      <div className="mt-0.5 flex flex-wrap gap-1">
+                        {r.outputNotContainCheck.map((c, i) => (
+                          <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${!c.found ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                            {c.keyword}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {r.regexMatch !== undefined && (
+                    <div className="text-[10px] text-theme-muted">
+                      Regex: <span className={r.regexMatch ? 'text-green-400' : 'text-red-400'}>{r.regexMatch ? 'matched' : 'no match'}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </>
