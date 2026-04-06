@@ -8,13 +8,8 @@ import type { SkillRun, RunStatus, SkillFile } from '@skill-ide/shared';
 const TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 const activeProcesses = new Map<string, ChildProcess>();
 const runs = new Map<string, SkillRun>();
-// Map Claude session ID → work directory for proper resume
-const sessionWorkDirs = new Map<string, string>();
-
 export type OutputCallback = (stream: 'stdout' | 'stderr', data: string) => void;
 export type StatusCallback = (status: RunStatus) => void;
-export type ChatOutputCallback = (text: string) => void;
-export type ChatSessionCallback = (sessionId: string) => void;
 export type ToolUseCallback = (toolName: string, toolInput: string) => void;
 
 export function getSkillRuns(skillId: string): SkillRun[] {
@@ -231,53 +226,6 @@ export async function runSkill(
     onText: (text) => onOutput('stdout', text),
     onError: (text) => onOutput('stderr', text),
     onStatus,
-  });
-
-  return run;
-}
-
-/**
- * Run a playground chat turn. Uses --output-format stream-json to parse session ID.
- * If resumeSessionId is provided, uses --resume to continue the conversation.
- */
-export async function runPlaygroundChat(
-  skillId: string,
-  prompt: string,
-  onText: ChatOutputCallback,
-  onStatus: StatusCallback,
-  onSessionId: ChatSessionCallback,
-  onToolUse?: ToolUseCallback,
-  resumeSessionId?: string,
-  runId?: string,
-): Promise<SkillRun> {
-  const id = runId || uuid();
-  const run = createRun(id, skillId, prompt);
-  onStatus('running');
-
-  const reuseDir = resumeSessionId ? sessionWorkDirs.get(resumeSessionId) : undefined;
-  const { workDir } = await setupWorkDir(skillId, id, reuseDir);
-
-  const extraArgs = resumeSessionId ? [`--resume "${resumeSessionId}"`] : [];
-  const cmd = buildCmd(prompt, extraArgs);
-
-  let sessionFound = false;
-
-  spawnClaude({
-    cmd,
-    workDir,
-    run,
-    onText,
-    onError: (text) => onText(`[stderr] ${text}`),
-    onStatus,
-    onToolUse,
-    onStdoutEvent: (event) => {
-      // Extract session ID from init or result events
-      if (!sessionFound && event.session_id && (event.type === 'system' || event.type === 'result')) {
-        sessionFound = true;
-        sessionWorkDirs.set(event.session_id, workDir);
-        onSessionId(event.session_id);
-      }
-    },
   });
 
   return run;

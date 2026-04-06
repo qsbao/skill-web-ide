@@ -3,8 +3,20 @@ import { createRouter } from './router.js';
 import { createSender } from './sender.js';
 import { testHandler } from './handlers/test.handler.js';
 import { runHandler } from './handlers/run.handler.js';
-import { playgroundHandler } from './handlers/playground.handler.js';
+import { makePlaygroundHandler } from './handlers/playground.handler.js';
 import { promptLabHandler } from './handlers/prompt-lab.handler.js';
+import { createPlaygroundSessionManager, FsSessionStore, RealClaudeCli } from '../services/playground/index.js';
+import { config } from '../config.js';
+
+const store = new FsSessionStore();
+const cli = new RealClaudeCli(config.skillsDir, config.runsDir);
+const playgroundManager = createPlaygroundSessionManager({
+  cli,
+  store,
+  skillsDir: config.skillsDir,
+  runsDir: config.runsDir,
+});
+const playgroundHandler = makePlaygroundHandler(playgroundManager);
 
 const router = createRouter([testHandler, runHandler, playgroundHandler, promptLabHandler]);
 
